@@ -66,6 +66,7 @@ input[type="checkbox"] { width:18px; height:18px; accent-color:var(--blue); }
 .ops { display:flex; justify-content:center; gap:18px; }
 .ops a,.blue-link { color:#0785ff; text-decoration:none; }
 .empty { position:absolute; inset:49px 8px 0; display:flex; align-items:center; justify-content:center; color:#8b98aa; font-size:18px; background:#fff; border:1px solid var(--line); border-top:0; }
+.empty[hidden] { display:none; }
 .pager { height:58px; background:#fff; border-top:1px solid var(--line); display:flex; align-items:center; justify-content:flex-end; gap:9px; padding:0 18px; position:relative; }
 .float-tools { position:absolute; left:8px; display:flex; gap:14px; }
 .float-tools button { width:37px; height:37px; border:1px solid #d5dee9; border-radius:50%; color:#5f6d7d; background:#fff; font-size:18px; }
