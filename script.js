@@ -1,5 +1,5 @@
 const groups = ["7222201", "7222401", "7221301", "7222501", "7221201", "7221501", "7222301", "7222901", "7221601", "7221602", "7221603", "7221604", "7221605", "7221607", "7221801", "7221704", "7222801", "7222802", "7222803", "7222804", "7222805", "7222806", "7221401", "7221606", "7221701", "7221702", "7221802", "7221901", "7221902", "7222601", "7222602", "7222603", "7222604", "7222701", "7222702", "7223001", "72225101", "72225102", "72225103", "72225104", "72225105"];
-const splitGroupCodes = new Set(["72225101", "72225105"]);
+const splitGroupCodes = new Set(["72225101", "72225104", "72225105"]);
 const splitAreas = ["烟区", "精品区", "酒水区", "【香化A】", "【香化B】"];
 const employees = [
   { name: "陈亚琳", id: "30202606081021" }, { name: "唐伟", id: "30202606081022" }, { name: "蒙海晓", id: "30202606081023" }, { name: "胡巧菊", id: "30202606081024" },
@@ -41,10 +41,13 @@ function createFormLine(data = {}, canRemove = false) {
   const employeeId = data.employeeId || employees[0].id;
   const month = data.month || months[0];
   const amount = data.amount ?? "";
+  const area = data.area || "";
+  const areaDisabled = splitGroupCodes.has(group) ? "" : "disabled";
   return `<div class="add-row" data-form-line>
     <select data-field="group">${optionHtml(groups, item => item, item => item, group)}</select>
     <select data-field="employeeId">${optionHtml(employees, item => item.id, item => `${item.name} / ${item.id}`, employeeId)}</select>
     <select data-field="month">${optionHtml(months, item => item, item => item, month)}</select>
+    <select data-field="area" ${areaDisabled}><option value="">${splitGroupCodes.has(group) ? "请选择分区" : "无需选择分区"}</option>${optionHtml(splitAreas, item => item, item => item, area)}</select>
     <input data-field="amount" type="number" min="0" placeholder="请输入目标销售额(元)" value="${amount}" />
     <div class="row-actions">
       <button class="round-plus" data-add-line title="增加一行">＋</button>
@@ -67,6 +70,7 @@ function readFormLines() {
       employeeName: employee.name,
       employeeId,
       month: line.querySelector('[data-field="month"]').value,
+      area: line.querySelector('[data-field="area"]').value,
       amount: Number(line.querySelector('[data-field="amount"]').value)
     };
   });
@@ -76,6 +80,7 @@ function readFormLines() {
 function expandSplitRows(rows, updatedAt) {
   return rows.flatMap(row => {
     if (!splitGroupCodes.has(row.group)) return [{ id: `target-${Date.now()}-${Math.random().toString(16).slice(2)}`, ...row, updatedBy: "当前用户", updatedAt }];
+    if (row.area) return [{ id: `target-${Date.now()}-${Math.random().toString(16).slice(2)}`, ...row, group: `${row.group}-${row.area}`, updatedBy: "当前用户", updatedAt }];
     const base = Math.floor(row.amount / splitAreas.length);
     const remainder = row.amount - base * splitAreas.length;
     return splitAreas.map((area, index) => ({
@@ -205,6 +210,17 @@ $("#pickEmployeeBtn").addEventListener("click", () => { $("#employeeIdFilter").v
 $("#fullscreenBtn").addEventListener("click", () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.());
 $("#collapseBtn").addEventListener("click", () => { $("#filters").classList.toggle("collapsed"); $("#collapseBtn").textContent = $("#filters").classList.contains("collapsed") ? "⌄" : "⌃"; });
 $("#selectAll").addEventListener("change", event => { filteredRecords.slice((currentPage - 1) * pageSize, currentPage * pageSize).forEach(record => event.target.checked ? selectedIds.add(record.id) : selectedIds.delete(record.id)); render(); });
+$("#formLines").addEventListener("change", event => {
+  if (event.target.matches('[data-field="group"]')) {
+    const line = event.target.closest("[data-form-line]");
+    const areaSelect = line.querySelector('[data-field="area"]');
+    const enabled = splitGroupCodes.has(event.target.value);
+    areaSelect.disabled = !enabled;
+    areaSelect.value = "";
+    areaSelect.options[0].textContent = enabled ? "请选择分区" : "无需选择分区";
+  }
+});
+
 $("#formLines").addEventListener("click", event => {
   if (event.target.matches("[data-add-line]")) { event.preventDefault(); $("#formLines").insertAdjacentHTML("beforeend", createFormLine({ group: groups[0], employeeId: employees[0].id, month: months[0], amount: 0 }, true)); toast("已增加一行"); }
   if (event.target.matches("[data-remove-line]")) { event.preventDefault(); event.target.closest("[data-form-line]").remove(); }

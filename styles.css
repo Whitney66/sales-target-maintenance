@@ -97,8 +97,9 @@ input[type="checkbox"] { width:18px; height:18px; accent-color:var(--blue); }
 .add-lines { margin:28px 26px 18px; padding-right:8px; display:flex; flex-direction:column; gap:12px; max-height:360px; overflow-y:auto; overflow-x:hidden; }
 .add-lines::-webkit-scrollbar { width:8px; }
 .add-lines::-webkit-scrollbar-thumb { background:#c8d2df; border-radius:8px; }
-.add-row { display:grid; grid-template-columns:268px 268px 286px 268px 78px; gap:14px; align-items:center; }
+.add-row { display:grid; grid-template-columns:248px 248px 210px 210px 238px 78px; gap:14px; align-items:center; }
 .add-row select,.add-row input { width:100%; height:46px; font-size:16px; }
+.add-row select:disabled { color:#9aa8bb; background:#f5f7fa; }
 .row-actions { display:flex; align-items:center; gap:12px; }
 .round-plus,.round-minus { width:28px; height:28px; border:2px solid #68727e; border-radius:50%; color:#68727e; font-size:24px; line-height:20px; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
 .round-minus { color:#d92d20; border-color:#d92d20; }
