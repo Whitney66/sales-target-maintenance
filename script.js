@@ -1,4 +1,6 @@
-const groups = ["[68681054]茅台专卖店(YS)-BL1", "[68680506]Coach-AL1", "[68681234]香化精品-BL2", "[68681299]香化精品-BL2", "[68680718]腕表集合店-A03", "[68680988]精品烟酒-A12", "[68681126]cdf会员服务台-C01", "[68681308]数码电器体验区-D02"];
+const groups = ["7222201", "7222401", "7221301", "7222501", "7221201", "7221501", "7222301", "7222901", "7221601", "7221602", "7221603", "7221604", "7221605", "7221607", "7221801", "7221704", "7222801", "7222802", "7222803", "7222804", "7222805", "7222806", "7221401", "7221606", "7221701", "7221702", "7221802", "7221901", "7221902", "7222601", "7222602", "7222603", "7222604", "7222701", "7222702", "7223001", "72225101", "72225102", "72225103", "72225104", "72225105"];
+const splitGroupCodes = new Set(["72225101", "72225105"]);
+const splitAreas = ["烟区", "精品区", "酒水区", "【香化A】", "【香化B】"];
 const employees = [
   { name: "陈亚琳", id: "30202606081021" }, { name: "唐伟", id: "30202606081022" }, { name: "蒙海晓", id: "30202606081023" }, { name: "胡巧菊", id: "30202606081024" },
   { name: "王一诺", id: "30202606081025" }, { name: "赵敏", id: "30202606081026" }, { name: "李明", id: "30202606081027" }, { name: "刘佳", id: "30202606081028" },
@@ -70,6 +72,23 @@ function readFormLines() {
   });
 }
 
+
+function expandSplitRows(rows, updatedAt) {
+  return rows.flatMap(row => {
+    if (!splitGroupCodes.has(row.group)) return [{ id: `target-${Date.now()}-${Math.random().toString(16).slice(2)}`, ...row, updatedBy: "当前用户", updatedAt }];
+    const base = Math.floor(row.amount / splitAreas.length);
+    const remainder = row.amount - base * splitAreas.length;
+    return splitAreas.map((area, index) => ({
+      id: `target-${Date.now()}-${index}-${Math.random().toString(16).slice(2)}`,
+      ...row,
+      group: `${row.group}-${area}`,
+      amount: base + (index === splitAreas.length - 1 ? remainder : 0),
+      updatedBy: "当前用户",
+      updatedAt
+    }));
+  });
+}
+
 function render() {
   const totalPages = Math.max(1, Math.ceil(filteredRecords.length / pageSize));
   currentPage = Math.min(Math.max(currentPage, 1), totalPages);
@@ -131,9 +150,10 @@ function saveRecord() {
     records = records.map(record => record.id === editingId ? { ...record, ...rows[0], updatedBy: "当前用户", updatedAt } : record);
     toast("修改成功");
   } else {
-    const created = rows.map((row, index) => ({ id: `target-${Date.now()}-${index}`, ...row, updatedBy: "当前用户", updatedAt }));
+    const created = expandSplitRows(rows, updatedAt);
     records.unshift(...created);
-    toast(`新增成功，共 ${created.length} 条`);
+    const splitCount = created.length - rows.length;
+    toast(splitCount ? `新增成功，共 ${created.length} 条，已自动拆分 ${splitCount} 条区域数据` : `新增成功，共 ${created.length} 条`);
   }
   closeModals(); filteredRecords = [...records]; currentPage = 1; selectedIds.clear(); render();
 }
@@ -151,7 +171,7 @@ function batchDelete() {
 
 function simulateImport() {
   const updateExisting = $("#updateExisting").checked;
-  const imported = [{ id: `import-${Date.now()}-1`, group: groups[1], employeeName: "测试员工A", employeeId: "30990000000001", month: "2026-07", amount: 68000, updatedBy: "导入用户", updatedAt: "2026-07-03 17:35:00" }, { id: `import-${Date.now()}-2`, group: groups[2], employeeName: "测试员工B", employeeId: "30990000000002", month: "2026-07", amount: 72000, updatedBy: "导入用户", updatedAt: "2026-07-03 17:35:00" }];
+  const imported = [{ id: `import-${Date.now()}-1`, group: groups[36], employeeName: "测试员工A", employeeId: "30990000000001", month: "2026-07", amount: 68000, updatedBy: "导入用户", updatedAt: "2026-07-03 17:35:00" }, { id: `import-${Date.now()}-2`, group: groups[37], employeeName: "测试员工B", employeeId: "30990000000002", month: "2026-07", amount: 72000, updatedBy: "导入用户", updatedAt: "2026-07-03 17:35:00" }];
   records = updateExisting ? [...imported, ...records.slice(2)] : [...imported, ...records]; filteredRecords = [...records]; selectedIds.clear(); currentPage = 1; closeModals(); render(); toast(`${pickedFileName || "测试数据"} 导入成功，新增 ${imported.length} 条`);
 }
 
