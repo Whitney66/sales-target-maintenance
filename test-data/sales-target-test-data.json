@@ -1,0 +1,14 @@
+[
+  {"teamId":"T202607001","teamName":"茅台销售一组","group":"[68681054]茅台专卖店(YS)-BL1","employeeName":"陈亚琳","employeeId":"30202606081021","month":"2026-07","amount":56000,"updatedBy":"蒙海晓","updatedAt":"2026-07-03 13:34:54","scenario":"正常新增"},
+  {"teamId":"T202607002","teamName":"Coach销售一组","group":"[68680506]Coach-AL1","employeeName":"唐伟","employeeId":"30202606081022","month":"2026-07","amount":73000,"updatedBy":"唐伟","updatedAt":"2026-07-03 10:16:24","scenario":"正常修改"},
+  {"teamId":"T202607003","teamName":"香化精品一组","group":"[68681234]香化精品-BL2","employeeName":"蒙海晓","employeeId":"30202606081023","month":"2026-07","amount":0,"updatedBy":"陈亚琳","updatedAt":"2026-07-03 10:16:24","scenario":"零销售任务"},
+  {"teamId":"T202607004","teamName":"腕表集合一组","group":"[68680718]腕表集合店-A03","employeeName":"胡巧菊","employeeId":"30202606081024","month":"2026-07","amount":98000,"updatedBy":"胡巧菊","updatedAt":"2026-07-02 16:22:24","scenario":"高销售任务"},
+  {"teamId":"T202607005","teamName":"精品烟酒一组","group":"[68680988]精品烟酒-A12","employeeName":"王一诺","employeeId":"30202606081025","month":"2026-06","amount":42000,"updatedBy":"蒙海晓","updatedAt":"2026-07-02 12:18:24","scenario":"跨月份查询"},
+  {"teamId":"T202607006","teamName":"会员服务一组","group":"[68681126]cdf会员服务台-C01","employeeName":"赵敏","employeeId":"30202606081026","month":"2026-06","amount":65000,"updatedBy":"唐伟","updatedAt":"2026-07-02 11:19:24","scenario":"门店筛选"},
+  {"teamId":"T202607007","teamName":"数码体验一组","group":"[68681308]数码电器体验区-D02","employeeName":"李明","employeeId":"30202606081027","month":"2026-05","amount":38000,"updatedBy":"陈亚琳","updatedAt":"2026-07-01 09:16:24","scenario":"历史月份"},
+  {"teamId":"T202607008","teamName":"香化精品二组","group":"[68681299]香化精品-BL2","employeeName":"刘佳","employeeId":"30202606081028","month":"2026-05","amount":81000,"updatedBy":"胡巧菊","updatedAt":"2026-07-01 09:18:24","scenario":"同名柜组不同编码"},
+  {"teamId":"T202607009","teamName":"茅台销售二组","group":"[68681054]茅台专卖店(YS)-BL1","employeeName":"周晴","employeeId":"30202606081029","month":"2026-04","amount":52000,"updatedBy":"蒙海晓","updatedAt":"2026-06-30 18:48:01","scenario":"分页数据"},
+  {"teamId":"T202607010","teamName":"Coach销售二组","group":"[68680506]Coach-AL1","employeeName":"吴越","employeeId":"30202606081030","month":"2026-04","amount":61000,"updatedBy":"唐伟","updatedAt":"2026-06-30 18:48:00","scenario":"批量删除"},
+  {"teamId":"T202607011","teamName":"腕表集合二组","group":"[68680718]腕表集合店-A03","employeeName":"孙晨","employeeId":"30202606081031","month":"2026-07","amount":120000,"updatedBy":"陈亚琳","updatedAt":"2026-07-03 17:02:14","scenario":"金额上限筛选"},
+  {"teamId":"T202607012","teamName":"精品烟酒二组","group":"[68680988]精品烟酒-A12","employeeName":"黄静","employeeId":"30202606081032","month":"2026-07","amount":15000,"updatedBy":"胡巧菊","updatedAt":"2026-07-03 17:04:18","scenario":"金额下限筛选"}
+]
