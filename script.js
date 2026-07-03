@@ -44,7 +44,10 @@ function createFormLine(data = {}, canRemove = false) {
     <select data-field="employeeId">${optionHtml(employees, item => item.id, item => `${item.name} / ${item.id}`, employeeId)}</select>
     <select data-field="month">${optionHtml(months, item => item, item => item, month)}</select>
     <input data-field="amount" type="number" min="0" placeholder="请输入目标销售额(元)" value="${amount}" />
-    <button class="${canRemove ? "round-minus" : "round-plus"}" data-${canRemove ? "remove" : "add"}-line title="${canRemove ? "删除此行" : "增加一行"}">${canRemove ? "−" : "＋"}</button>
+    <div class="row-actions">
+      <button class="round-plus" data-add-line title="增加一行">＋</button>
+      ${canRemove ? `<button class="round-minus" data-remove-line title="删除此行">−</button>` : ""}
+    </div>
   </div>`;
 }
 
