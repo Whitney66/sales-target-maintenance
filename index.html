@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>员工销售目标维护 - 高保真原型</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="brand-name">大数据平台</div>
+      </div>
+      <nav class="nav">
+        <button class="back" aria-label="返回">‹</button>
+        <a>分析</a>
+        <a>库存分析</a>
+        <a>顾客分析</a>
+        <a>采购分析</a>
+        <a>提货分析</a>
+        <a>风险管控</a>
+        <a>离线分析</a>
+        <a>自定义分析</a>
+        <a class="active">数据填报</a>
+      </nav>
+      <div class="top-actions">
+        <div class="search"><input placeholder="搜索" /><span>⌕</span></div>
+        <button class="icon-btn" aria-label="通知">♢</button>
+        <button class="icon-btn" aria-label="全屏">⛶</button>
+        <div class="avatar">cdf</div>
+      </div>
+    </header>
+
+    <main class="page">
+      <div class="tabs">
+        <button>经营看板 <span>×</span></button>
+        <button class="selected">员工销售目标维护 <span>×</span></button>
+      </div>
+
+      <section class="filters" id="filters">
+        <div class="filter-grid">
+          <label><span>门店</span><div class="select">请选择门店/店面/柜组 <b>⌄</b></div></label>
+          <label><span>姓名</span><input placeholder="请输入姓名" /></label>
+          <label><span>工号</span><div class="lookup"><input placeholder="请输入工号" /><button>•••</button></div></label>
+          <label><span>月份</span><div class="date">▣　开始日期　-　结束日期</div></label>
+          <label class="amount"><span>目标销售额(元)</span><div class="range"><input placeholder="请输入" /><em>-</em><input placeholder="请输入" /></div></label>
+          <div class="filter-buttons"><button class="primary small">⌕ 查询</button><button class="ghost small">↻ 重置</button></div>
+        </div>
+        <button class="collapse" id="collapseBtn" aria-label="折叠筛选">⌃</button>
+      </section>
+
+      <section class="toolbar">
+        <div>
+          <button class="primary" id="addBtn">新增</button>
+          <button class="outline disabled">修改</button>
+          <button class="outline" id="importBtn">导入</button>
+          <button class="danger">▥ 批量删除</button>
+        </div>
+        <button class="sync">更新任务拆分</button>
+      </section>
+
+      <section class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="check"><input type="checkbox" /></th>
+              <th>柜组</th>
+              <th>员工姓名</th>
+              <th>工号</th>
+              <th>月份</th>
+              <th>销售任务(元)</th>
+              <th>最后更新人</th>
+              <th>最后更新时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </section>
+
+      <footer class="pager">
+        <div class="float-tools"><button>▦</button><button>⇩</button><button>⇅</button><button>Σ</button></div>
+        <span>共 108557 条</span>
+        <select><option>30条/页</option></select>
+        <button class="page-btn muted">‹</button>
+        <button class="page-btn current">1</button>
+        <button class="page-btn">2</button>
+        <button class="page-btn">3</button>
+        <button class="page-btn">4</button>
+        <button class="page-btn">5</button>
+        <button class="page-btn">6</button>
+        <button class="page-btn">...</button>
+        <button class="page-btn">3619</button>
+        <button class="page-btn">›</button>
+        <span>前往</span><input class="jump" value="1" /><span>页</span>
+      </footer>
+    </main>
+  </div>
+
+  <div class="modal-mask" id="importModal" hidden>
+    <div class="modal import-modal">
+      <div class="modal-head"><h2>导入</h2><button class="close" data-close>×</button></div>
+      <div class="upload-box" id="dropZone">
+        <div class="cloud">☁</div>
+        <p>将文件拖到此处，或<span>点击上传</span></p>
+        <input type="file" accept=".xls,.xlsx" />
+      </div>
+      <label class="checkbox-row"><input type="checkbox" /> 是否更新已经存在的员工销售目标数据</label>
+      <p class="hint">仅允许导入xls、xlsx格式文件。<a href="#">下载模板</a></p>
+      <div class="modal-actions"><button class="primary">确定</button><button class="ghost" data-close>取消</button></div>
+    </div>
+  </div>
+
+  <div class="modal-mask" id="addModal" hidden>
+    <div class="modal add-modal">
+      <div class="modal-head"><h2>新增</h2><button class="close" data-close>×</button></div>
+      <div class="add-row">
+        <div class="select">请选择柜组 <b>⌄</b></div>
+        <div class="select">请选择营业员 <b>⌄</b></div>
+        <div class="date">▣ 请选择月份</div>
+        <input placeholder="请输入目标销售额(元)" />
+        <button class="round-plus" title="增加一行">＋</button>
+      </div>
+      <div class="modal-actions"><button class="primary">确定</button><button class="ghost" data-close>取消</button></div>
+    </div>
+  </div>
+
+  <script src="./script.js"></script>
+</body>
+</html>
