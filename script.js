@@ -22,48 +22,56 @@ function createRecords() {
     const employee = employees[index % employees.length];
     const group = groups[index % groups.length];
     const month = months[Math.floor(index / 24) % months.length];
+    return { id: `target-${index + 1}`, group, employeeName: employee.name, employeeId: employee.id, month, amount: index % 11 === 0 ? 0 : 20000 + (index % 17) * 3500 + Math.floor(index / 8) * 1000, updatedBy: editors[index % editors.length], updatedAt: `2026-07-${String(3 - Math.min(2, Math.floor(index / 36))).padStart(2, "0")} ${String(10 + (index % 7)).padStart(2, "0")}:${String(16 + (index % 40)).padStart(2, "0")}:24` };
+  });
+}
+
+function formatAmount(value) { return Number(value).toLocaleString("zh-CN", { maximumFractionDigits: 0 }); }
+function optionHtml(items, getValue, getLabel, selected) { return items.map(item => `<option value="${getValue(item)}" ${getValue(item) === selected ? "selected" : ""}>${getLabel(item)}</option>`).join(""); }
+
+function fillOptions() {
+  groups.forEach(group => $("#storeFilter").insertAdjacentHTML("beforeend", `<option value="${group}">${group}</option>`));
+  months.forEach(month => $("#monthFilter").insertAdjacentHTML("beforeend", `<option value="${month}">${month}</option>`));
+}
+
+function createFormLine(data = {}, canRemove = false) {
+  const group = data.group || groups[0];
+  const employeeId = data.employeeId || employees[0].id;
+  const month = data.month || months[0];
+  const amount = data.amount ?? "";
+  return `<div class="add-row" data-form-line>
+    <select data-field="group">${optionHtml(groups, item => item, item => item, group)}</select>
+    <select data-field="employeeId">${optionHtml(employees, item => item.id, item => `${item.name} / ${item.id}`, employeeId)}</select>
+    <select data-field="month">${optionHtml(months, item => item, item => item, month)}</select>
+    <input data-field="amount" type="number" min="0" placeholder="请输入目标销售额(元)" value="${amount}" />
+    <button class="${canRemove ? "round-minus" : "round-plus"}" data-${canRemove ? "remove" : "add"}-line title="${canRemove ? "删除此行" : "增加一行"}">${canRemove ? "−" : "＋"}</button>
+  </div>`;
+}
+
+function resetFormLines(seed = {}) {
+  $("#formLines").innerHTML = createFormLine(seed, false);
+  $("#formTip").textContent = "";
+}
+
+function readFormLines() {
+  return [...document.querySelectorAll("[data-form-line]")].map(line => {
+    const employeeId = line.querySelector('[data-field="employeeId"]').value;
+    const employee = employees.find(item => item.id === employeeId);
     return {
-      id: `target-${index + 1}`,
-      group,
+      group: line.querySelector('[data-field="group"]').value,
       employeeName: employee.name,
-      employeeId: employee.id,
-      month,
-      amount: index % 11 === 0 ? 0 : 20000 + (index % 17) * 3500 + Math.floor(index / 8) * 1000,
-      updatedBy: editors[index % editors.length],
-      updatedAt: `2026-07-${String(3 - Math.min(2, Math.floor(index / 36))).padStart(2, "0")} ${String(10 + (index % 7)).padStart(2, "0")}:${String(16 + (index % 40)).padStart(2, "0")}:24`
+      employeeId,
+      month: line.querySelector('[data-field="month"]').value,
+      amount: Number(line.querySelector('[data-field="amount"]').value)
     };
   });
 }
 
-function formatAmount(value) {
-  return Number(value).toLocaleString("zh-CN", { maximumFractionDigits: 0 });
-}
-
-function fillOptions() {
-  groups.forEach(group => $("#storeFilter").insertAdjacentHTML("beforeend", `<option value="${group}">${group}</option>`));
-  months.forEach(month => {
-    $("#monthFilter").insertAdjacentHTML("beforeend", `<option value="${month}">${month}</option>`);
-    $("#formMonth").insertAdjacentHTML("beforeend", `<option value="${month}">${month}</option>`);
-  });
-  groups.forEach(group => $("#formGroup").insertAdjacentHTML("beforeend", `<option value="${group}">${group}</option>`));
-  employees.forEach(employee => $("#formEmployee").insertAdjacentHTML("beforeend", `<option value="${employee.id}">${employee.name} / ${employee.id}</option>`));
-}
-
 function render() {
   const totalPages = Math.max(1, Math.ceil(filteredRecords.length / pageSize));
-  currentPage = Math.min(currentPage, totalPages);
+  currentPage = Math.min(Math.max(currentPage, 1), totalPages);
   const pageRecords = filteredRecords.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  body.innerHTML = pageRecords.map(record => `<tr class="${selectedIds.has(record.id) ? "selected" : ""}">
-    <td><input type="checkbox" data-select="${record.id}" ${selectedIds.has(record.id) ? "checked" : ""} /></td>
-    <td title="${record.group}">${record.group}</td>
-    <td>${record.employeeName}</td>
-    <td>${record.employeeId}</td>
-    <td>${record.month}</td>
-    <td>${formatAmount(record.amount)}</td>
-    <td>${record.updatedBy}</td>
-    <td>${record.updatedAt}</td>
-    <td><div class="ops"><a href="#" data-copy="${record.id}">复制</a><a href="#" data-edit="${record.id}">修改</a><a href="#" data-delete="${record.id}">删除</a></div></td>
-  </tr>`).join("");
+  body.innerHTML = pageRecords.map(record => `<tr class="${selectedIds.has(record.id) ? "selected" : ""}"><td><input type="checkbox" data-select="${record.id}" ${selectedIds.has(record.id) ? "checked" : ""} /></td><td title="${record.group}">${record.group}</td><td>${record.employeeName}</td><td>${record.employeeId}</td><td>${record.month}</td><td>${formatAmount(record.amount)}</td><td>${record.updatedBy}</td><td>${record.updatedAt}</td><td><div class="ops"><a href="#" data-copy="${record.id}">复制</a><a href="#" data-edit="${record.id}">修改</a><a href="#" data-delete="${record.id}">删除</a></div></td></tr>`).join("");
   $("#emptyState").hidden = filteredRecords.length > 0;
   $("#totalText").textContent = `共 ${filteredRecords.length} 条`;
   $("#jumpPage").value = currentPage;
@@ -74,15 +82,10 @@ function render() {
 }
 
 function renderPages(totalPages) {
-  const pageNumbers = $("#pageNumbers");
   const pages = new Set([1, totalPages, currentPage, currentPage - 1, currentPage + 1, 2, 3]);
   const sorted = [...pages].filter(page => page >= 1 && page <= totalPages).sort((a, b) => a - b);
   let previous = 0;
-  pageNumbers.innerHTML = sorted.map(page => {
-    const gap = page - previous > 1 ? `<button class="page-btn" disabled>...</button>` : "";
-    previous = page;
-    return `${gap}<button class="page-btn ${page === currentPage ? "current" : ""}" data-page="${page}">${page}</button>`;
-  }).join("");
+  $("#pageNumbers").innerHTML = sorted.map(page => { const gap = page - previous > 1 ? `<button class="page-btn" disabled>...</button>` : ""; previous = page; return `${gap}<button class="page-btn ${page === currentPage ? "current" : ""}" data-page="${page}">${page}</button>`; }).join("");
 }
 
 function syncSelectionState(pageRecords = []) {
@@ -95,34 +98,15 @@ function syncSelectionState(pageRecords = []) {
 }
 
 function applyFilters() {
-  const store = $("#storeFilter").value;
-  const name = $("#nameFilter").value.trim();
-  const employeeId = $("#employeeIdFilter").value.trim();
-  const month = $("#monthFilter").value;
-  const min = Number($("#minAmount").value || 0);
-  const max = Number($("#maxAmount").value || Number.MAX_SAFE_INTEGER);
-  const keyword = $("#globalSearch").value.trim();
-  filteredRecords = records.filter(record =>
-    (!store || record.group === store) &&
-    (!name || record.employeeName.includes(name)) &&
-    (!employeeId || record.employeeId.includes(employeeId)) &&
-    (!month || record.month === month) &&
-    record.amount >= min && record.amount <= max &&
-    (!keyword || [record.group, record.employeeName, record.employeeId, record.month, record.updatedBy].some(value => String(value).includes(keyword)))
-  );
-  currentPage = 1;
-  selectedIds.clear();
-  render();
-  toast(`查询完成，共 ${filteredRecords.length} 条数据`);
+  const store = $("#storeFilter").value, name = $("#nameFilter").value.trim(), employeeId = $("#employeeIdFilter").value.trim(), month = $("#monthFilter").value;
+  const min = Number($("#minAmount").value || 0), max = Number($("#maxAmount").value || Number.MAX_SAFE_INTEGER), keyword = $("#globalSearch").value.trim();
+  filteredRecords = records.filter(record => (!store || record.group === store) && (!name || record.employeeName.includes(name)) && (!employeeId || record.employeeId.includes(employeeId)) && (!month || record.month === month) && record.amount >= min && record.amount <= max && (!keyword || [record.group, record.employeeName, record.employeeId, record.month, record.updatedBy].some(value => String(value).includes(keyword))));
+  currentPage = 1; selectedIds.clear(); render(); toast(`查询完成，共 ${filteredRecords.length} 条数据`);
 }
 
 function resetFilters() {
   ["#storeFilter", "#nameFilter", "#employeeIdFilter", "#monthFilter", "#minAmount", "#maxAmount", "#globalSearch"].forEach(selector => $(selector).value = "");
-  filteredRecords = [...records];
-  selectedIds.clear();
-  currentPage = 1;
-  render();
-  toast("筛选条件已重置");
+  filteredRecords = [...records]; selectedIds.clear(); currentPage = 1; render(); toast("筛选条件已重置");
 }
 
 function openModal(id) { $(id).hidden = false; }
@@ -131,89 +115,53 @@ function closeModals() { document.querySelectorAll(".modal-mask").forEach(modal 
 function openEditor(record, copy = false) {
   editingId = record && !copy ? record.id : null;
   $("#editTitle").textContent = record && !copy ? "修改" : copy ? "复制" : "新增";
-  const source = record || records[0];
-  $("#formGroup").value = source.group;
-  $("#formEmployee").value = source.employeeId;
-  $("#formMonth").value = source.month;
-  $("#formAmount").value = copy ? "" : source.amount;
+  resetFormLines(record ? { ...record, amount: copy ? "" : record.amount } : { group: groups[0], employeeId: employees[0].id, month: months[0], amount: 0 });
   openModal("#editModal");
 }
 
 function saveRecord() {
-  const employee = employees.find(item => item.id === $("#formEmployee").value);
-  const amount = Number($("#formAmount").value);
-  if (!amount && amount !== 0) { $("#formTip").textContent = "请输入目标销售额"; return; }
-  if (amount < 0) { $("#formTip").textContent = "目标销售额不能小于 0"; return; }
-  const payload = { group: $("#formGroup").value, employeeName: employee.name, employeeId: employee.id, month: $("#formMonth").value, amount, updatedBy: "当前用户", updatedAt: "2026-07-03 17:30:00" };
+  const rows = readFormLines();
+  if (rows.some(row => Number.isNaN(row.amount))) { $("#formTip").textContent = "请输入目标销售额"; return; }
+  if (rows.some(row => row.amount < 0)) { $("#formTip").textContent = "目标销售额不能小于 0"; return; }
+  const updatedAt = "2026-07-03 17:30:00";
   if (editingId) {
-    records = records.map(record => record.id === editingId ? { ...record, ...payload } : record);
+    records = records.map(record => record.id === editingId ? { ...record, ...rows[0], updatedBy: "当前用户", updatedAt } : record);
     toast("修改成功");
   } else {
-    records.unshift({ id: `target-${Date.now()}`, ...payload });
-    toast("新增成功");
+    const created = rows.map((row, index) => ({ id: `target-${Date.now()}-${index}`, ...row, updatedBy: "当前用户", updatedAt }));
+    records.unshift(...created);
+    toast(`新增成功，共 ${created.length} 条`);
   }
-  closeModals();
-  filteredRecords = [...records];
-  currentPage = 1;
-  selectedIds.clear();
-  render();
+  closeModals(); filteredRecords = [...records]; currentPage = 1; selectedIds.clear(); render();
 }
 
 function deleteRecord(id) {
   const record = records.find(item => item.id === id);
   if (!record || !confirm(`确认删除 ${record.employeeName} ${record.month} 的销售目标？`)) return;
-  records = records.filter(item => item.id !== id);
-  filteredRecords = filteredRecords.filter(item => item.id !== id);
-  selectedIds.delete(id);
-  render();
-  toast("删除成功");
+  records = records.filter(item => item.id !== id); filteredRecords = filteredRecords.filter(item => item.id !== id); selectedIds.delete(id); render(); toast("删除成功");
 }
 
 function batchDelete() {
   if (!selectedIds.size || !confirm(`确认删除已选择的 ${selectedIds.size} 条数据？`)) return;
-  records = records.filter(record => !selectedIds.has(record.id));
-  filteredRecords = filteredRecords.filter(record => !selectedIds.has(record.id));
-  selectedIds.clear();
-  render();
-  toast("批量删除成功");
+  records = records.filter(record => !selectedIds.has(record.id)); filteredRecords = filteredRecords.filter(record => !selectedIds.has(record.id)); selectedIds.clear(); render(); toast("批量删除成功");
 }
 
 function simulateImport() {
   const updateExisting = $("#updateExisting").checked;
-  const imported = [
-    { id: `import-${Date.now()}-1`, group: groups[1], employeeName: "测试员工A", employeeId: "30990000000001", month: "2026-07", amount: 68000, updatedBy: "导入用户", updatedAt: "2026-07-03 17:35:00" },
-    { id: `import-${Date.now()}-2`, group: groups[2], employeeName: "测试员工B", employeeId: "30990000000002", month: "2026-07", amount: 72000, updatedBy: "导入用户", updatedAt: "2026-07-03 17:35:00" }
-  ];
-  records = updateExisting ? [...imported, ...records.slice(2)] : [...imported, ...records];
-  filteredRecords = [...records];
-  selectedIds.clear();
-  currentPage = 1;
-  closeModals();
-  render();
-  toast(`${pickedFileName || "测试数据"} 导入成功，新增 ${imported.length} 条`);
+  const imported = [{ id: `import-${Date.now()}-1`, group: groups[1], employeeName: "测试员工A", employeeId: "30990000000001", month: "2026-07", amount: 68000, updatedBy: "导入用户", updatedAt: "2026-07-03 17:35:00" }, { id: `import-${Date.now()}-2`, group: groups[2], employeeName: "测试员工B", employeeId: "30990000000002", month: "2026-07", amount: 72000, updatedBy: "导入用户", updatedAt: "2026-07-03 17:35:00" }];
+  records = updateExisting ? [...imported, ...records.slice(2)] : [...imported, ...records]; filteredRecords = [...records]; selectedIds.clear(); currentPage = 1; closeModals(); render(); toast(`${pickedFileName || "测试数据"} 导入成功，新增 ${imported.length} 条`);
 }
 
 function exportCurrentPage() {
   const rows = filteredRecords.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   const csv = ["柜组,员工姓名,工号,月份,销售任务(元),最后更新人,最后更新时间", ...rows.map(row => [row.group, row.employeeName, row.employeeId, row.month, row.amount, row.updatedBy, row.updatedAt].join(","))].join("\n");
   const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "sales-target-current-page.csv";
-  link.click();
-  URL.revokeObjectURL(link.href);
+  const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "sales-target-current-page.csv"; link.click(); URL.revokeObjectURL(link.href);
 }
 
-function toast(message) {
-  const el = $("#toast");
-  el.textContent = message;
-  el.hidden = false;
-  clearTimeout(toast.timer);
-  toast.timer = setTimeout(() => el.hidden = true, 1800);
-}
+function toast(message) { const el = $("#toast"); el.textContent = message; el.hidden = false; clearTimeout(toast.timer); toast.timer = setTimeout(() => el.hidden = true, 1800); }
 
-fillOptions();
-render();
+fillOptions(); render();
 $("#queryBtn").addEventListener("click", applyFilters);
 $("#resetBtn").addEventListener("click", resetFilters);
 $("#globalSearch").addEventListener("keydown", event => { if (event.key === "Enter") applyFilters(); });
@@ -233,9 +181,10 @@ $("#syncBtn").addEventListener("click", () => toast("任务拆分已更新"));
 $("#pickEmployeeBtn").addEventListener("click", () => { $("#employeeIdFilter").value = employees[0].id; toast("已选择员工：陈亚琳"); });
 $("#fullscreenBtn").addEventListener("click", () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.());
 $("#collapseBtn").addEventListener("click", () => { $("#filters").classList.toggle("collapsed"); $("#collapseBtn").textContent = $("#filters").classList.contains("collapsed") ? "⌄" : "⌃"; });
-$("#selectAll").addEventListener("change", event => {
-  filteredRecords.slice((currentPage - 1) * pageSize, currentPage * pageSize).forEach(record => event.target.checked ? selectedIds.add(record.id) : selectedIds.delete(record.id));
-  render();
+$("#selectAll").addEventListener("change", event => { filteredRecords.slice((currentPage - 1) * pageSize, currentPage * pageSize).forEach(record => event.target.checked ? selectedIds.add(record.id) : selectedIds.delete(record.id)); render(); });
+$("#formLines").addEventListener("click", event => {
+  if (event.target.matches("[data-add-line]")) { event.preventDefault(); $("#formLines").insertAdjacentHTML("beforeend", createFormLine({ group: groups[0], employeeId: employees[0].id, month: months[0], amount: 0 }, true)); toast("已增加一行"); }
+  if (event.target.matches("[data-remove-line]")) { event.preventDefault(); event.target.closest("[data-form-line]").remove(); }
 });
 
 document.addEventListener("click", event => {
@@ -244,12 +193,7 @@ document.addEventListener("click", event => {
   if (event.target.dataset.copy) { event.preventDefault(); openEditor(records.find(record => record.id === event.target.dataset.copy), true); }
   if (event.target.dataset.delete) { event.preventDefault(); deleteRecord(event.target.dataset.delete); }
 });
-document.addEventListener("change", event => {
-  if (event.target.dataset.select) {
-    event.target.checked ? selectedIds.add(event.target.dataset.select) : selectedIds.delete(event.target.dataset.select);
-    render();
-  }
-});
+document.addEventListener("change", event => { if (event.target.dataset.select) { event.target.checked ? selectedIds.add(event.target.dataset.select) : selectedIds.delete(event.target.dataset.select); render(); } });
 document.querySelectorAll(".modal-mask").forEach(maskEl => maskEl.addEventListener("click", event => { if (event.target === maskEl) closeModals(); }));
 
 const dropZone = $("#dropZone");
