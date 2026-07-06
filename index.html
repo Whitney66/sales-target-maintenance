@@ -92,6 +92,17 @@
     </div>
   </div>
 
+  <div class="modal-mask" id="multiValueModal" hidden>
+    <div class="modal multi-value-modal">
+      <div class="modal-head"><h2>编辑多值</h2><button class="close" data-close>×</button></div>
+      <div class="multi-value-body">
+        <div class="multi-value-meta"><span>输入选项值（每行一个）</span><span>当前已输入：<b id="multiValueCount">0</b> 个</span></div>
+        <textarea id="multiValueInput" placeholder="请输入内容"></textarea>
+      </div>
+      <div class="modal-actions"><button class="primary" id="confirmMultiValueBtn">确定</button><button class="ghost" data-close>取消</button></div>
+    </div>
+  </div>
+
   <div class="toast" id="toast" hidden></div>
   <script src="./script.js?v=20260706-cascade-clear"></script>
 </body>

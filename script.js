@@ -134,6 +134,28 @@ function closeMultiSelects(except = null) {
 
 function closeStoreCascade() { $("#storeFilter").classList.remove("open"); }
 
+function parseMultiValueText(value = "") {
+  return value.split(/[\n,，]+/).map(item => item.trim()).filter(Boolean);
+}
+
+function updateMultiValueCount() {
+  $("#multiValueCount").textContent = parseMultiValueText($("#multiValueInput").value).length;
+}
+
+function openEmployeeIdMultiValue() {
+  const values = parseMultiValueText($("#employeeIdFilter").value);
+  $("#multiValueInput").value = values.join("\n");
+  updateMultiValueCount();
+  openModal("#multiValueModal");
+  $("#multiValueInput").focus();
+}
+
+function confirmEmployeeIdMultiValue() {
+  const values = parseMultiValueText($("#multiValueInput").value);
+  $("#employeeIdFilter").value = values.join("，");
+  closeModals();
+}
+
 function clearMultiSelect(multi) {
   multi.querySelectorAll('input[type="checkbox"]').forEach(input => input.checked = false);
   updateMultiSelect(multi);
@@ -256,12 +278,12 @@ function syncSelectionState(pageRecords = []) {
 }
 
 function applyFilters() {
-  const storeCodes = getFilterGroupCodes(), name = $("#nameFilter").value.trim(), employeeId = $("#employeeIdFilter").value.trim(), month = $("#monthFilter").value;
+  const storeCodes = getFilterGroupCodes(), name = $("#nameFilter").value.trim(), employeeIds = parseMultiValueText($("#employeeIdFilter").value), month = $("#monthFilter").value;
   const min = Number($("#minAmount").value || 0), max = Number($("#maxAmount").value || Number.MAX_SAFE_INTEGER), keyword = $("#globalSearch").value.trim();
   filteredRecords = records.filter(record => {
     const recordGroup = baseGroup(record.group);
     const teamName = groupToTeam.get(recordGroup) || "";
-    return (!storeCodes || storeCodes.has(recordGroup)) && (!name || record.employeeName.includes(name)) && (!employeeId || record.employeeId.includes(employeeId)) && (!month || record.month === month) && record.amount >= min && record.amount <= max && (!keyword || [record.group, teamName, storeTree.code, record.employeeName, record.employeeId, record.month, record.updatedBy].some(value => String(value).includes(keyword)));
+    return (!storeCodes || storeCodes.has(recordGroup)) && (!name || record.employeeName.includes(name)) && (!employeeIds.length || employeeIds.some(employeeId => record.employeeId.includes(employeeId))) && (!month || record.month === month) && record.amount >= min && record.amount <= max && (!keyword || [record.group, teamName, storeTree.code, record.employeeName, record.employeeId, record.month, record.updatedBy].some(value => String(value).includes(keyword)));
   });
   currentPage = 1; selectedIds.clear(); render(); toast(`查询完成，共 ${filteredRecords.length} 条数据`);
 }
@@ -346,7 +368,9 @@ $("#saveBtn").addEventListener("click", saveRecord);
 $("#confirmImportBtn").addEventListener("click", simulateImport);
 $("#exportBtn").addEventListener("click", exportCurrentPage);
 $("#syncBtn").addEventListener("click", () => toast("任务拆分已更新"));
-$("#pickEmployeeBtn").addEventListener("click", () => { $("#employeeIdFilter").value = employees[0].id; toast("已选择员工：陈亚琳"); });
+$("#pickEmployeeBtn").addEventListener("click", openEmployeeIdMultiValue);
+$("#multiValueInput").addEventListener("input", updateMultiValueCount);
+$("#confirmMultiValueBtn").addEventListener("click", confirmEmployeeIdMultiValue);
 $("#fullscreenBtn").addEventListener("click", () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.());
 $("#collapseBtn").addEventListener("click", () => { $("#filters").classList.toggle("collapsed"); $("#collapseBtn").textContent = $("#filters").classList.contains("collapsed") ? "⌄" : "⌃"; });
 $("#selectAll").addEventListener("change", event => { filteredRecords.slice((currentPage - 1) * pageSize, currentPage * pageSize).forEach(record => event.target.checked ? selectedIds.add(record.id) : selectedIds.delete(record.id)); render(); });

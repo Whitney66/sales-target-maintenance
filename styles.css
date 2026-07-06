@@ -111,6 +111,12 @@ input[type="checkbox"] { width:18px; height:18px; accent-color:var(--blue); }
 .modal-actions { display:flex; gap:20px; justify-content:center; padding-bottom:26px; }
 .modal-actions button { height:56px; min-width:118px; font-size:22px; }
 .add-modal { width:min(1295px, calc(100vw - 96px)); min-height:258px; }
+.multi-value-modal { width:min(1280px, calc(100vw - 96px)); }
+.multi-value-body { padding:22px 39px 32px; }
+.multi-value-meta { display:flex; align-items:center; justify-content:space-between; color:#8b929c; font-size:22px; margin-bottom:20px; }
+.multi-value-meta b { font-weight:500; color:#667085; }
+.multi-value-body textarea { width:100%; height:149px; border:1px solid #1688f0; border-radius:6px; padding:16px 31px; outline:none; resize:vertical; color:#4c5968; font:28px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",Arial,sans-serif; }
+.multi-value-body textarea::placeholder { color:#c2c8d0; }
 .add-lines { margin:28px 28px 18px; padding-right:8px; display:flex; flex-direction:column; gap:12px; max-height:360px; overflow:visible; }
 .add-lines::-webkit-scrollbar { width:8px; }
 .add-lines::-webkit-scrollbar-thumb { background:#c8d2df; border-radius:8px; }
