@@ -30,7 +30,7 @@
 
       <section class="filters" id="filters">
         <div class="filter-grid">
-          <label><span>门店</span><select id="storeFilter"><option value="">请选择门店/团队/柜组</option></select></label>
+          <label><span>门店</span><div class="cascade-select" id="storeFilter"><button type="button" class="cascade-trigger placeholder" data-cascade-trigger><span data-cascade-text>请选择门店/团队/柜组</span><b>⌄</b></button><div class="cascade-panel" data-cascade-panel></div></div></label>
           <label><span>姓名</span><input id="nameFilter" placeholder="请输入姓名" /></label>
           <label><span>工号</span><div class="lookup"><input id="employeeIdFilter" placeholder="请输入工号" /><button id="pickEmployeeBtn">•••</button></div></label>
           <label><span>月份</span><select id="monthFilter"><option value="">请选择月份</option></select></label>

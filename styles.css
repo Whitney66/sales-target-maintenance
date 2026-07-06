@@ -32,8 +32,24 @@ select,input { outline:none; }
 .filter-grid label>span { width:92px; text-align:right; white-space:nowrap; color:#3f4855; }
 input,select,.date { height:36px; border:1px solid #d5dee9; background:#fff; border-radius:4px; padding:0 14px; color:#4c5968; min-width:0; }
 input::placeholder { color:#a4aebc; }
-label input,label select,label .date,.lookup { width:260px; }
-#storeFilter { color:#4c5968; }
+label input,label select,label .date,.lookup,.cascade-select { width:260px; }
+.cascade-select { position:relative; }
+.cascade-trigger { width:100%; height:36px; border:1px solid #d5dee9; background:#fff; border-radius:4px; padding:0 12px 0 14px; color:#4c5968; display:flex; align-items:center; justify-content:space-between; }
+.cascade-trigger.placeholder { color:#a4aebc; }
+.cascade-trigger span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cascade-trigger b { color:#7b8794; font-weight:500; }
+.cascade-select.open .cascade-trigger { border-color:#1688f0; box-shadow:0 0 0 2px rgba(22,136,240,.1); }
+.cascade-panel { display:none; position:absolute; left:0; top:42px; width:760px; height:292px; border:1px solid #d5dee9; border-radius:4px; background:#fff; box-shadow:0 8px 20px rgba(16,24,40,.14); z-index:40; overflow:hidden; }
+.cascade-select.open .cascade-panel { display:flex; }
+.cascade-col { width:252px; height:100%; overflow:auto; padding:8px 0; border-right:1px solid #e5ebf3; }
+.cascade-col:last-child { border-right:0; }
+.cascade-option { height:34px; display:flex; align-items:center; gap:8px; padding:0 12px; color:#4c5968; cursor:pointer; position:relative; }
+.cascade-option:hover,.cascade-option.hover,.cascade-option.selected { background:#eaf6ff; }
+.cascade-option input { width:16px; height:16px; flex:0 0 auto; accent-color:#1688f0; }
+.cascade-option span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cascade-option em { margin-left:auto; color:#9aa8bb; font-style:normal; }
+.cascade-group-list { display:none; }
+.cascade-group-list.active { display:block; }
 .lookup { height:36px; display:flex; }
 .lookup input { border-radius:4px 0 0 4px; width:205px; }
 .lookup button { width:56px; border:1px solid #d5dee9; border-left:0; border-radius:0 4px 4px 0; color:#818b99; background:#f6f8fb; }
@@ -106,8 +122,10 @@ input[type="checkbox"] { width:18px; height:18px; accent-color:var(--blue); }
 .multi-trigger.placeholder { color:#a4aebc; }
 .multi-trigger span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .multi-trigger b { color:#7b8794; font-weight:500; margin-left:8px; }
-.multi-menu { display:none; position:absolute; left:0; right:0; top:50px; max-height:220px; overflow:auto; border:1px solid #cfd8e5; border-radius:4px; background:#fff; box-shadow:0 10px 22px rgba(16,24,40,.14); z-index:30; padding:6px 0; }
+.multi-menu { display:none; position:absolute; left:0; right:0; top:50px; max-height:220px; overflow:auto; border:1px solid #cfd8e5; border-radius:4px; background:#fff; box-shadow:0 10px 22px rgba(16,24,40,.14); z-index:30; padding:0 0 6px; }
 .multi-select.open .multi-menu { display:block; }
+.multi-menu-head { height:34px; display:flex; align-items:center; justify-content:space-between; padding:0 12px; border-bottom:1px solid #edf1f6; color:#667085; background:#fafcff; position:sticky; top:0; z-index:1; }
+.multi-menu-head button { color:#1688f0; font-size:14px; }
 .multi-menu label { height:34px; display:flex; align-items:center; gap:8px; padding:0 12px; color:#4c5968; cursor:pointer; }
 .multi-menu label:hover { background:#f4f9ff; }
 .multi-menu input[type="checkbox"] { width:16px; height:16px; flex:0 0 auto; }

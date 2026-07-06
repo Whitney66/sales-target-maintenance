@@ -27,6 +27,7 @@ let currentPage = 1;
 let pageSize = 30;
 let editingId = null;
 let pickedFileName = "";
+let selectedStoreFilter = { type: "", value: "" };
 
 const $ = selector => document.querySelector(selector);
 const body = $("#tableBody");
@@ -48,23 +49,38 @@ function baseGroup(value = "") { return String(value).split("-")[0]; }
 function groupNeedsArea(group) { return splitGroupCodes.has(baseGroup(group)); }
 
 function fillOptions() {
-  const storeOptions = [`<option value="">请选择门店/团队/柜组</option>`, `<option value="store:${storeTree.code}">${storeTree.name}${storeTree.code}</option>`];
-  storeTree.teams.forEach(team => {
-    storeOptions.push(`<option value="team:${escapeHtml(team.name)}">　${escapeHtml(team.name)}</option>`);
-    team.groups.forEach(group => storeOptions.push(`<option value="group:${group}">　　${group}</option>`));
-  });
-  $("#storeFilter").innerHTML = storeOptions.join("");
+  renderStoreCascade();
   $("#monthFilter").innerHTML = `<option value="">请选择月份</option>${optionHtml(months, item => item, item => item, "")}`;
 }
 
-function getFilterGroupCodes(value) {
-  if (!value) return null;
-  const [type, ...rest] = value.split(":");
-  const key = rest.join(":");
-  if (type === "store") return new Set(groups);
-  if (type === "team") return new Set(storeTree.teams.find(team => team.name === key)?.groups || []);
-  if (type === "group") return new Set([key]);
-  return new Set([value]);
+function storeFilterLabel() {
+  if (!selectedStoreFilter.value) return "请选择门店/团队/柜组";
+  return selectedStoreFilter.value;
+}
+
+function renderStoreCascade() {
+  const panel = $("#storeFilter [data-cascade-panel]");
+  const selectedTeam = selectedStoreFilter.type === "group" ? groupToTeam.get(selectedStoreFilter.value) : selectedStoreFilter.type === "team" ? selectedStoreFilter.value : "";
+  const selectedGroups = selectedStoreFilter.type === "store" ? new Set(groups) : selectedStoreFilter.type === "team" ? new Set(storeTree.teams.find(team => team.name === selectedStoreFilter.value)?.groups || []) : selectedStoreFilter.type === "group" ? new Set([selectedStoreFilter.value]) : new Set();
+  panel.innerHTML = `<div class="cascade-col store-col"><label class="cascade-option ${selectedStoreFilter.type === "store" ? "selected" : ""}" data-cascade-type="store" data-cascade-value="${storeTree.code}"><input type="checkbox" ${selectedStoreFilter.type === "store" ? "checked" : ""} /> <span>${storeTree.code}</span></label></div>
+    <div class="cascade-col team-col">${storeTree.teams.map(team => `<label class="cascade-option ${selectedTeam === team.name ? "selected" : ""}" data-cascade-type="team" data-cascade-value="${escapeHtml(team.name)}"><input type="checkbox" ${selectedStoreFilter.type === "team" && selectedStoreFilter.value === team.name ? "checked" : ""} /> <span>${escapeHtml(team.name)}</span><em>›</em></label>`).join("")}</div>
+    <div class="cascade-col group-col">${storeTree.teams.map(team => `<div class="cascade-group-list ${selectedTeam === team.name || !selectedTeam ? "active" : ""}" data-team="${escapeHtml(team.name)}">${team.groups.map(group => `<label class="cascade-option" data-cascade-type="group" data-cascade-value="${group}"><input type="checkbox" ${selectedGroups.has(group) ? "checked" : ""} /> <span>${group}</span></label>`).join("")}</div>`).join("")}</div>`;
+  const trigger = $("#storeFilter [data-cascade-trigger]");
+  $("#storeFilter [data-cascade-text]").textContent = storeFilterLabel();
+  trigger.classList.toggle("placeholder", !selectedStoreFilter.value);
+}
+
+function setStoreFilter(type, value) {
+  selectedStoreFilter = selectedStoreFilter.type === type && selectedStoreFilter.value === value ? { type: "", value: "" } : { type, value };
+  renderStoreCascade();
+}
+
+function getFilterGroupCodes() {
+  if (!selectedStoreFilter.value) return null;
+  if (selectedStoreFilter.type === "store") return new Set(groups);
+  if (selectedStoreFilter.type === "team") return new Set(storeTree.teams.find(team => team.name === selectedStoreFilter.value)?.groups || []);
+  if (selectedStoreFilter.type === "group") return new Set([selectedStoreFilter.value]);
+  return null;
 }
 
 function normalizeRecordForForm(record = {}) {
@@ -90,6 +106,7 @@ function createMultiSelect(field, items, selectedValues, placeholder, getValue, 
   return `<div class="multi-select" data-multi="${field}" data-placeholder="${escapeHtml(placeholder)}">
     <button type="button" class="multi-trigger ${selectedLabels.length ? "" : "placeholder"}" data-multi-trigger><span data-multi-text>${escapeHtml(formatMultiText(selectedLabels, placeholder))}</span><b>⌄</b></button>
     <div class="multi-menu">
+      <div class="multi-menu-head"><span>${escapeHtml(placeholder)}</span><button type="button" data-clear-multi>清空</button></div>
       ${items.map(item => {
         const value = getValue(item);
         const label = getLabel(item);
@@ -113,6 +130,15 @@ function updateMultiSelect(multi) {
 
 function closeMultiSelects(except = null) {
   document.querySelectorAll(".multi-select.open").forEach(multi => { if (multi !== except) multi.classList.remove("open"); });
+}
+
+function closeStoreCascade() { $("#storeFilter").classList.remove("open"); }
+
+function clearMultiSelect(multi) {
+  multi.querySelectorAll('input[type="checkbox"]').forEach(input => input.checked = false);
+  updateMultiSelect(multi);
+  const line = multi.closest("[data-form-line]");
+  if (line && multi.dataset.multi === "group") syncAreaSelect(line);
 }
 
 function syncAreaSelect(line) {
@@ -230,7 +256,7 @@ function syncSelectionState(pageRecords = []) {
 }
 
 function applyFilters() {
-  const storeCodes = getFilterGroupCodes($("#storeFilter").value), name = $("#nameFilter").value.trim(), employeeId = $("#employeeIdFilter").value.trim(), month = $("#monthFilter").value;
+  const storeCodes = getFilterGroupCodes(), name = $("#nameFilter").value.trim(), employeeId = $("#employeeIdFilter").value.trim(), month = $("#monthFilter").value;
   const min = Number($("#minAmount").value || 0), max = Number($("#maxAmount").value || Number.MAX_SAFE_INTEGER), keyword = $("#globalSearch").value.trim();
   filteredRecords = records.filter(record => {
     const recordGroup = baseGroup(record.group);
@@ -241,7 +267,9 @@ function applyFilters() {
 }
 
 function resetFilters() {
-  ["#storeFilter", "#nameFilter", "#employeeIdFilter", "#monthFilter", "#minAmount", "#maxAmount", "#globalSearch"].forEach(selector => $(selector).value = "");
+  selectedStoreFilter = { type: "", value: "" };
+  renderStoreCascade();
+  ["#nameFilter", "#employeeIdFilter", "#monthFilter", "#minAmount", "#maxAmount", "#globalSearch"].forEach(selector => $(selector).value = "");
   filteredRecords = [...records]; selectedIds.clear(); currentPage = 1; render(); toast("筛选条件已重置");
 }
 
@@ -322,6 +350,18 @@ $("#pickEmployeeBtn").addEventListener("click", () => { $("#employeeIdFilter").v
 $("#fullscreenBtn").addEventListener("click", () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.());
 $("#collapseBtn").addEventListener("click", () => { $("#filters").classList.toggle("collapsed"); $("#collapseBtn").textContent = $("#filters").classList.contains("collapsed") ? "⌄" : "⌃"; });
 $("#selectAll").addEventListener("change", event => { filteredRecords.slice((currentPage - 1) * pageSize, currentPage * pageSize).forEach(record => event.target.checked ? selectedIds.add(record.id) : selectedIds.delete(record.id)); render(); });
+$("#storeFilter").addEventListener("click", event => {
+  const trigger = event.target.closest("[data-cascade-trigger]");
+  const option = event.target.closest("[data-cascade-type]");
+  if (trigger) { event.preventDefault(); event.stopPropagation(); closeMultiSelects(); $("#storeFilter").classList.toggle("open"); }
+  if (option) { event.preventDefault(); event.stopPropagation(); setStoreFilter(option.dataset.cascadeType, option.dataset.cascadeValue); }
+});
+$("#storeFilter").addEventListener("mouseover", event => {
+  const teamOption = event.target.closest('[data-cascade-type="team"]');
+  if (!teamOption) return;
+  document.querySelectorAll(".cascade-group-list").forEach(list => list.classList.toggle("active", list.dataset.team === teamOption.dataset.cascadeValue));
+  document.querySelectorAll(".team-col .cascade-option").forEach(option => option.classList.toggle("hover", option === teamOption));
+});
 $("#formLines").addEventListener("change", event => {
   if (event.target.matches('[data-field="group"]')) {
     const line = event.target.closest("[data-form-line]");
@@ -332,6 +372,8 @@ $("#formLines").addEventListener("change", event => {
 });
 
 $("#formLines").addEventListener("click", event => {
+  const clearBtn = event.target.closest("[data-clear-multi]");
+  if (clearBtn) { event.preventDefault(); event.stopPropagation(); clearMultiSelect(clearBtn.closest(".multi-select")); return; }
   const trigger = event.target.closest("[data-multi-trigger]");
   if (trigger) {
     event.preventDefault();
@@ -348,6 +390,7 @@ $("#formLines").addEventListener("click", event => {
 
 document.addEventListener("click", event => {
   if (!event.target.closest(".multi-select")) closeMultiSelects();
+  if (!event.target.closest("#storeFilter")) closeStoreCascade();
   if (event.target.matches("[data-close]")) closeModals();
   if (event.target.dataset.edit) { event.preventDefault(); openEditor(records.find(record => record.id === event.target.dataset.edit)); }
   if (event.target.dataset.copy) { event.preventDefault(); openEditor(records.find(record => record.id === event.target.dataset.copy), true); }
