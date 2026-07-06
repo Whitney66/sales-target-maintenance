@@ -1,5 +1,18 @@
-const groups = ["7222201", "7222401", "7221301", "7222501", "7221201", "7221501", "7222301", "7222901", "7221601", "7221602", "7221603", "7221604", "7221605", "7221607", "7221801", "7221704", "7222801", "7222802", "7222803", "7222804", "7222805", "7222806", "7221401", "7221606", "7221701", "7221702", "7221802", "7221901", "7221902", "7222601", "7222602", "7222603", "7222604", "7222701", "7222702", "7223001", "72225101", "72225102", "72225103", "72225104", "72225105"];
-const splitGroupCodes = new Set(["72225101", "72225104", "72225105"]);
+const storeTree = {
+  code: "7222",
+  name: "首都T3门店",
+  manager: "李晓楠",
+  teams: [
+    { name: "T3香化", groups: ["7222201", "7222401", "7221301", "7222501"] },
+    { name: "T3烟酒", groups: ["7221201", "7221501", "7222301", "7222901"] },
+    { name: "T3精品专卖", groups: ["7221601", "7221602", "7221603", "7221604", "7221605", "7221607", "7221801", "7221704", "7222801", "7222802", "7222803", "7222804", "7222805", "7222806"] },
+    { name: "T3精品综合", groups: ["7221401", "7221606", "7221701", "7221702", "7221802", "7221901", "7221902", "7222601", "7222602", "7222603", "7222604", "7222701", "7222702", "7223001"] },
+    { name: "T3入境", groups: ["72225101", "72225102", "72225103", "72225104"] }
+  ]
+};
+const groups = storeTree.teams.flatMap(team => team.groups);
+const groupToTeam = new Map(storeTree.teams.flatMap(team => team.groups.map(group => [group, team.name])));
+const splitGroupCodes = new Set(["72225101", "72225104"]);
 const splitAreas = ["烟区", "精品区", "酒水区", "香化A", "香化B"];
 const employees = [
   { name: "陈亚琳", id: "30202606081021" }, { name: "唐伟", id: "30202606081022" }, { name: "蒙海晓", id: "30202606081023" }, { name: "胡巧菊", id: "30202606081024" },
@@ -29,26 +42,105 @@ function createRecords() {
 }
 
 function formatAmount(value) { return Number(value).toLocaleString("zh-CN", { maximumFractionDigits: 0 }); }
-function optionHtml(items, getValue, getLabel, selected) { return items.map(item => `<option value="${getValue(item)}" ${getValue(item) === selected ? "selected" : ""}>${getLabel(item)}</option>`).join(""); }
+function escapeHtml(value = "") { return String(value).replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char])); }
+function optionHtml(items, getValue, getLabel, selected) { return items.map(item => `<option value="${escapeHtml(getValue(item))}" ${getValue(item) === selected ? "selected" : ""}>${escapeHtml(getLabel(item))}</option>`).join(""); }
+function baseGroup(value = "") { return String(value).split("-")[0]; }
+function groupNeedsArea(group) { return splitGroupCodes.has(baseGroup(group)); }
 
 function fillOptions() {
-  groups.forEach(group => $("#storeFilter").insertAdjacentHTML("beforeend", `<option value="${group}">${group}</option>`));
-  months.forEach(month => $("#monthFilter").insertAdjacentHTML("beforeend", `<option value="${month}">${month}</option>`));
+  const storeOptions = [`<option value="">请选择门店/团队/柜组</option>`, `<option value="store:${storeTree.code}">${storeTree.name}${storeTree.code}</option>`];
+  storeTree.teams.forEach(team => {
+    storeOptions.push(`<option value="team:${escapeHtml(team.name)}">　${escapeHtml(team.name)}</option>`);
+    team.groups.forEach(group => storeOptions.push(`<option value="group:${group}">　　${group}</option>`));
+  });
+  $("#storeFilter").innerHTML = storeOptions.join("");
+  $("#monthFilter").innerHTML = `<option value="">请选择月份</option>${optionHtml(months, item => item, item => item, "")}`;
+}
+
+function getFilterGroupCodes(value) {
+  if (!value) return null;
+  const [type, ...rest] = value.split(":");
+  const key = rest.join(":");
+  if (type === "store") return new Set(groups);
+  if (type === "team") return new Set(storeTree.teams.find(team => team.name === key)?.groups || []);
+  if (type === "group") return new Set([key]);
+  return new Set([value]);
+}
+
+function normalizeRecordForForm(record = {}) {
+  const rawGroup = record.group || "";
+  const group = baseGroup(rawGroup);
+  const area = record.area || (String(rawGroup).includes("-") ? String(rawGroup).split("-").slice(1).join("-") : "");
+  return { ...record, group, area, groups: group ? [group] : [], employeeIds: record.employeeId ? [record.employeeId] : [] };
+}
+
+function normalizeSelected(value) {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  return value ? [value] : [];
+}
+
+function formatMultiText(labels, placeholder) {
+  if (!labels.length) return placeholder;
+  return labels.length > 2 ? `${labels.slice(0, 2).join("、")} 等${labels.length}项` : labels.join("、");
+}
+
+function createMultiSelect(field, items, selectedValues, placeholder, getValue, getLabel, getShortLabel = getLabel) {
+  const selected = new Set(normalizeSelected(selectedValues));
+  const selectedLabels = items.filter(item => selected.has(getValue(item))).map(item => getShortLabel(item));
+  return `<div class="multi-select" data-multi="${field}" data-placeholder="${escapeHtml(placeholder)}">
+    <button type="button" class="multi-trigger ${selectedLabels.length ? "" : "placeholder"}" data-multi-trigger><span data-multi-text>${escapeHtml(formatMultiText(selectedLabels, placeholder))}</span><b>⌄</b></button>
+    <div class="multi-menu">
+      ${items.map(item => {
+        const value = getValue(item);
+        const label = getLabel(item);
+        return `<label><input type="checkbox" data-field="${field}" data-short-label="${escapeHtml(getShortLabel(item))}" value="${escapeHtml(value)}" ${selected.has(value) ? "checked" : ""} /><span>${escapeHtml(label)}</span></label>`;
+      }).join("")}
+    </div>
+  </div>`;
+}
+
+function getSelectedValues(line, field) {
+  return [...line.querySelectorAll(`[data-field="${field}"]:checked`)].map(input => input.value);
+}
+
+function updateMultiSelect(multi) {
+  const labels = [...multi.querySelectorAll('input[type="checkbox"]:checked')].map(input => input.dataset.shortLabel || input.value);
+  const text = multi.querySelector("[data-multi-text]");
+  const trigger = multi.querySelector("[data-multi-trigger]");
+  text.textContent = formatMultiText(labels, multi.dataset.placeholder);
+  trigger.classList.toggle("placeholder", !labels.length);
+}
+
+function closeMultiSelects(except = null) {
+  document.querySelectorAll(".multi-select.open").forEach(multi => { if (multi !== except) multi.classList.remove("open"); });
+}
+
+function syncAreaSelect(line) {
+  const areaSelect = line.querySelector('[data-field="area"]');
+  const enabled = getSelectedValues(line, "group").some(groupNeedsArea);
+  areaSelect.disabled = !enabled;
+  if (!enabled) areaSelect.value = "";
+  areaSelect.options[0].textContent = enabled ? "请选择分区" : "无需选择分区";
+}
+
+function syncFormLineState() {
+  document.querySelectorAll("[data-multi]").forEach(updateMultiSelect);
+  document.querySelectorAll("[data-form-line]").forEach(syncAreaSelect);
 }
 
 function createFormLine(data = {}, canRemove = false) {
-  const group = data.group || groups[0];
-  const employeeId = data.employeeId || employees[0].id;
-  const month = data.month || months[0];
+  const selectedGroups = normalizeSelected(data.groups || data.group);
+  const selectedEmployeeIds = normalizeSelected(data.employeeIds || data.employeeId);
+  const month = data.month || "";
   const amount = data.amount ?? "";
   const area = data.area || "";
-  const areaDisabled = splitGroupCodes.has(group) ? "" : "disabled";
+  const areaEnabled = selectedGroups.some(groupNeedsArea);
   return `<div class="add-row" data-form-line>
-    <select data-field="group">${optionHtml(groups, item => item, item => item, group)}</select>
-    <select data-field="area" ${areaDisabled}><option value="">${splitGroupCodes.has(group) ? "请选择分区" : "无需选择分区"}</option>${optionHtml(splitAreas, item => item, item => item, area)}</select>
-    <select data-field="employeeId">${optionHtml(employees, item => item.id, item => `${item.name} / ${item.id}`, employeeId)}</select>
-    <select data-field="month">${optionHtml(months, item => item, item => item, month)}</select>
-    <input data-field="amount" type="number" min="0" placeholder="请输入目标销售额(元)" value="${amount}" />
+    ${createMultiSelect("group", groups, selectedGroups, "请选择柜组", item => item, item => item)}
+    <select data-field="area" ${areaEnabled ? "" : "disabled"}><option value="">${areaEnabled ? "请选择分区" : "无需选择分区"}</option>${optionHtml(splitAreas, item => item, item => item, area)}</select>
+    ${createMultiSelect("employeeId", employees, selectedEmployeeIds, "请选择员工", item => item.id, item => `${item.name} / ${item.id}`, item => item.name)}
+    <select data-field="month"><option value="">请选择月份</option>${optionHtml(months, item => item, item => item, month)}</select>
+    <input data-field="amount" type="number" min="0" placeholder="请输入目标销售额（元）" value="${escapeHtml(amount)}" />
     <div class="row-actions">
       <button class="round-plus" data-add-line title="增加一行">＋</button>
       ${canRemove ? `<button class="round-minus" data-remove-line title="删除此行">−</button>` : ""}
@@ -59,23 +151,36 @@ function createFormLine(data = {}, canRemove = false) {
 function resetFormLines(seed = {}) {
   $("#formLines").innerHTML = createFormLine(seed, false);
   $("#formTip").textContent = "";
+  syncFormLineState();
 }
 
 function readFormLines() {
-  return [...document.querySelectorAll("[data-form-line]")].map(line => {
-    const employeeId = line.querySelector('[data-field="employeeId"]').value;
-    const employee = employees.find(item => item.id === employeeId);
-    return {
-      group: line.querySelector('[data-field="group"]').value,
-      employeeName: employee.name,
-      employeeId,
-      month: line.querySelector('[data-field="month"]').value,
-      area: line.querySelector('[data-field="area"]').value,
-      amount: Number(line.querySelector('[data-field="amount"]').value)
-    };
+  const rows = [];
+  const errors = [];
+  const lines = [...document.querySelectorAll("[data-form-line]")];
+  lines.forEach((line, index) => {
+    const prefix = lines.length > 1 ? `第${index + 1}行：` : "";
+    const selectedGroups = getSelectedValues(line, "group");
+    const selectedEmployeeIds = getSelectedValues(line, "employeeId");
+    const month = line.querySelector('[data-field="month"]').value;
+    const area = line.querySelector('[data-field="area"]').value;
+    const amountText = line.querySelector('[data-field="amount"]').value.trim();
+    const amount = Number(amountText);
+    if (!selectedGroups.length) errors.push(`${prefix}请选择柜组`);
+    if (!selectedEmployeeIds.length) errors.push(`${prefix}请选择员工`);
+    if (!month) errors.push(`${prefix}请选择月份`);
+    if (!amountText) errors.push(`${prefix}请输入目标销售额`);
+    if (amountText && Number.isNaN(amount)) errors.push(`${prefix}请输入正确的目标销售额`);
+    if (errors.length) return;
+    selectedGroups.forEach(group => {
+      selectedEmployeeIds.forEach(employeeId => {
+        const employee = employees.find(item => item.id === employeeId);
+        rows.push({ group, employeeName: employee.name, employeeId, month, area, amount });
+      });
+    });
   });
+  return { rows, errors };
 }
-
 
 function expandSplitRows(rows, updatedAt) {
   return rows.flatMap(row => {
@@ -125,9 +230,13 @@ function syncSelectionState(pageRecords = []) {
 }
 
 function applyFilters() {
-  const store = $("#storeFilter").value, name = $("#nameFilter").value.trim(), employeeId = $("#employeeIdFilter").value.trim(), month = $("#monthFilter").value;
+  const storeCodes = getFilterGroupCodes($("#storeFilter").value), name = $("#nameFilter").value.trim(), employeeId = $("#employeeIdFilter").value.trim(), month = $("#monthFilter").value;
   const min = Number($("#minAmount").value || 0), max = Number($("#maxAmount").value || Number.MAX_SAFE_INTEGER), keyword = $("#globalSearch").value.trim();
-  filteredRecords = records.filter(record => (!store || record.group === store) && (!name || record.employeeName.includes(name)) && (!employeeId || record.employeeId.includes(employeeId)) && (!month || record.month === month) && record.amount >= min && record.amount <= max && (!keyword || [record.group, record.employeeName, record.employeeId, record.month, record.updatedBy].some(value => String(value).includes(keyword))));
+  filteredRecords = records.filter(record => {
+    const recordGroup = baseGroup(record.group);
+    const teamName = groupToTeam.get(recordGroup) || "";
+    return (!storeCodes || storeCodes.has(recordGroup)) && (!name || record.employeeName.includes(name)) && (!employeeId || record.employeeId.includes(employeeId)) && (!month || record.month === month) && record.amount >= min && record.amount <= max && (!keyword || [record.group, teamName, storeTree.code, record.employeeName, record.employeeId, record.month, record.updatedBy].some(value => String(value).includes(keyword)));
+  });
   currentPage = 1; selectedIds.clear(); render(); toast(`查询完成，共 ${filteredRecords.length} 条数据`);
 }
 
@@ -137,22 +246,25 @@ function resetFilters() {
 }
 
 function openModal(id) { $(id).hidden = false; }
-function closeModals() { document.querySelectorAll(".modal-mask").forEach(modal => modal.hidden = true); $("#formTip").textContent = ""; }
+function closeModals() { document.querySelectorAll(".modal-mask").forEach(modal => modal.hidden = true); $("#formTip").textContent = ""; closeMultiSelects(); }
 
 function openEditor(record, copy = false) {
   editingId = record && !copy ? record.id : null;
   $("#editTitle").textContent = record && !copy ? "修改" : copy ? "复制" : "新增";
-  resetFormLines(record ? { ...record, amount: copy ? "" : record.amount } : { group: groups[0], employeeId: employees[0].id, month: months[0], amount: 0 });
+  resetFormLines(record ? normalizeRecordForForm({ ...record, amount: copy ? "" : record.amount }) : {});
   openModal("#editModal");
 }
 
 function saveRecord() {
-  const rows = readFormLines();
-  if (rows.some(row => Number.isNaN(row.amount))) { $("#formTip").textContent = "请输入目标销售额"; return; }
+  const { rows, errors } = readFormLines();
+  if (errors.length) { $("#formTip").textContent = errors[0]; return; }
   if (rows.some(row => row.amount < 0)) { $("#formTip").textContent = "目标销售额不能小于 0"; return; }
+  if (editingId && rows.length !== 1) { $("#formTip").textContent = "修改时仅支持选择一个柜组和一名员工"; return; }
   const updatedAt = "2026-07-03 17:30:00";
   if (editingId) {
-    records = records.map(record => record.id === editingId ? { ...record, ...rows[0], updatedBy: "当前用户", updatedAt } : record);
+    const row = rows[0];
+    const persistedRow = splitGroupCodes.has(row.group) && row.area ? { ...row, group: `${row.group}-${row.area}` } : row;
+    records = records.map(record => record.id === editingId ? { ...record, ...persistedRow, updatedBy: "当前用户", updatedAt } : record);
     toast("修改成功");
   } else {
     const created = expandSplitRows(rows, updatedAt);
@@ -182,7 +294,7 @@ function simulateImport() {
 
 function exportCurrentPage() {
   const rows = filteredRecords.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  const csv = ["柜组,员工姓名,工号,月份,销售任务(元),最后更新人,最后更新时间", ...rows.map(row => [row.group, row.employeeName, row.employeeId, row.month, row.amount, row.updatedBy, row.updatedAt].join(","))].join("\n");
+  const csv = ["柜组,员工姓名,工号,月份,目标销售额（元）,最后更新人,最后更新时间", ...rows.map(row => [row.group, row.employeeName, row.employeeId, row.month, row.amount, row.updatedBy, row.updatedAt].join(","))].join("\n");
   const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
   const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "sales-target-current-page.csv"; link.click(); URL.revokeObjectURL(link.href);
 }
@@ -213,20 +325,29 @@ $("#selectAll").addEventListener("change", event => { filteredRecords.slice((cur
 $("#formLines").addEventListener("change", event => {
   if (event.target.matches('[data-field="group"]')) {
     const line = event.target.closest("[data-form-line]");
-    const areaSelect = line.querySelector('[data-field="area"]');
-    const enabled = splitGroupCodes.has(event.target.value);
-    areaSelect.disabled = !enabled;
-    areaSelect.value = "";
-    areaSelect.options[0].textContent = enabled ? "请选择分区" : "无需选择分区";
+    updateMultiSelect(event.target.closest("[data-multi]"));
+    syncAreaSelect(line);
   }
+  if (event.target.matches('[data-field="employeeId"]')) updateMultiSelect(event.target.closest("[data-multi]"));
 });
 
 $("#formLines").addEventListener("click", event => {
-  if (event.target.matches("[data-add-line]")) { event.preventDefault(); $("#formLines").insertAdjacentHTML("beforeend", createFormLine({ group: groups[0], employeeId: employees[0].id, month: months[0], amount: 0 }, true)); toast("已增加一行"); }
+  const trigger = event.target.closest("[data-multi-trigger]");
+  if (trigger) {
+    event.preventDefault();
+    event.stopPropagation();
+    const multi = trigger.closest(".multi-select");
+    const isOpen = multi.classList.contains("open");
+    closeMultiSelects(multi);
+    multi.classList.toggle("open", !isOpen);
+    return;
+  }
+  if (event.target.matches("[data-add-line]")) { event.preventDefault(); $("#formLines").insertAdjacentHTML("beforeend", createFormLine({}, true)); syncFormLineState(); toast("已增加一行"); }
   if (event.target.matches("[data-remove-line]")) { event.preventDefault(); event.target.closest("[data-form-line]").remove(); }
 });
 
 document.addEventListener("click", event => {
+  if (!event.target.closest(".multi-select")) closeMultiSelects();
   if (event.target.matches("[data-close]")) closeModals();
   if (event.target.dataset.edit) { event.preventDefault(); openEditor(records.find(record => record.id === event.target.dataset.edit)); }
   if (event.target.dataset.copy) { event.preventDefault(); openEditor(records.find(record => record.id === event.target.dataset.copy), true); }

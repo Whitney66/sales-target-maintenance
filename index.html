@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>员工销售目标维护 - 高保真原型</title>
-  <link rel="stylesheet" href="./styles.css?v=d5338ac" />
+  <link rel="stylesheet" href="./styles.css?v=20260706-hierarchy-multiselect" />
 </head>
 <body>
   <div class="app">
@@ -30,7 +30,7 @@
 
       <section class="filters" id="filters">
         <div class="filter-grid">
-          <label><span>门店</span><select id="storeFilter"><option value="">请选择门店/店面/柜组</option></select></label>
+          <label><span>门店</span><select id="storeFilter"><option value="">请选择门店/团队/柜组</option></select></label>
           <label><span>姓名</span><input id="nameFilter" placeholder="请输入姓名" /></label>
           <label><span>工号</span><div class="lookup"><input id="employeeIdFilter" placeholder="请输入工号" /><button id="pickEmployeeBtn">•••</button></div></label>
           <label><span>月份</span><select id="monthFilter"><option value="">请选择月份</option></select></label>
@@ -54,7 +54,7 @@
       <section class="table-wrap">
         <table>
           <thead>
-            <tr><th class="check"><input type="checkbox" id="selectAll" /></th><th>柜组</th><th>员工姓名</th><th>工号</th><th>月份</th><th>销售任务(元)</th><th>最后更新人</th><th>最后更新时间</th><th>操作</th></tr>
+            <tr><th class="check"><input type="checkbox" id="selectAll" /></th><th>柜组</th><th>员工姓名</th><th>工号</th><th>月份</th><th>目标销售额（元）</th><th>最后更新人</th><th>最后更新时间</th><th>操作</th></tr>
           </thead>
           <tbody id="tableBody"></tbody>
         </table>
@@ -93,6 +93,6 @@
   </div>
 
   <div class="toast" id="toast" hidden></div>
-  <script src="./script.js?v=d5338ac"></script>
+  <script src="./script.js?v=20260706-hierarchy-multiselect"></script>
 </body>
 </html>

@@ -478,17 +478,5 @@
     "updatedBy": "胡巧菊",
     "updatedAt": "2026-07-01 17:55:24",
     "scenario": "普通柜组"
-  },
-  {
-    "teamId": "T202607041",
-    "teamName": "72225105门店下柜组",
-    "group": "72225105",
-    "employeeName": "王一诺",
-    "employeeId": "30202606081061",
-    "month": "2026-05",
-    "amount": 125000,
-    "updatedBy": "蒙海晓",
-    "updatedAt": "2026-07-01 10:16:24",
-    "scenario": "特殊柜组：按烟区/精品区/酒水区/【香化A】/【香化B】平均拆分目标"
   }
 ]
