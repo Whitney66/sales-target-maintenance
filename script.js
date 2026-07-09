@@ -29,7 +29,7 @@ let pageSize = 30;
 let editingId = null;
 let pickedFileName = "";
 let selectedStoreFilter = { type: "", value: "" };
-let selectedMonthFilter = "";
+let selectedMonthRange = { start: "", end: "" };
 let monthPanelYear = 2026;
 
 const $ = selector => document.querySelector(selector);
@@ -86,24 +86,64 @@ function getFilterGroupCodes() {
   return null;
 }
 
-function formatMonthLabel(value) {
-  if (!value) return "开始日期　-　结束日期";
+function monthLabel(value) {
+  if (!value) return "";
   const [year, month] = value.split("-");
-  return `${year} 年 ${Number(month)} 月`;
+  return `${year}/${month}`;
 }
 
-function setSelectedMonth(value) {
-  selectedMonthFilter = value;
-  if (value) monthPanelYear = Number(value.slice(0, 4));
+function formatMonthRangeLabel() {
+  const { start, end } = selectedMonthRange;
+  if (!start && !end) return "开始日期　-　结束日期";
+  return `${monthLabel(start)}　-　${monthLabel(end || start)}`;
+}
+
+function shiftMonth(value, offset) {
+  const [year, month] = value.split("-").map(Number);
+  const date = new Date(year, month - 1 + offset, 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function setSelectedMonthRange(start, end = start) {
+  selectedMonthRange = start && end && start > end ? { start: end, end: start } : { start, end };
+  if (selectedMonthRange.start) monthPanelYear = Number(selectedMonthRange.start.slice(0, 4));
   renderMonthPicker();
+}
+
+function pickMonthRange(value) {
+  const { start, end } = selectedMonthRange;
+  if (!start || end) setSelectedMonthRange(value, "");
+  else setSelectedMonthRange(start, value);
+}
+
+function shortcutMonthRange(type) {
+  const now = "2026-07";
+  const yearStart = `${now.slice(0, 4)}-01`;
+  const quarterStart = `${now.slice(0, 4)}-${String(Math.floor((Number(now.slice(5, 7)) - 1) / 3) * 3 + 1).padStart(2, "0")}`;
+  const ranges = {
+    current: [now, now],
+    previous: [shiftMonth(now, -1), shiftMonth(now, -1)],
+    recent3: [shiftMonth(now, -2), now],
+    quarter: [quarterStart, now],
+    year: [yearStart, now],
+    lastYear: [`${Number(now.slice(0, 4)) - 1}-01`, `${Number(now.slice(0, 4)) - 1}-12`]
+  };
+  return ranges[type] || [now, now];
+}
+
+function monthButtonClass(value) {
+  const { start, end } = selectedMonthRange;
+  const isEdge = value === start || value === end;
+  const inRange = start && end && value >= start && value <= end;
+  return [isEdge ? "selected" : "", inRange && !isEdge ? "in-range" : ""].filter(Boolean).join(" ");
 }
 
 function renderMonthPicker() {
   const picker = $("#monthFilter");
   const trigger = picker.querySelector("[data-month-trigger]");
   const text = picker.querySelector("[data-month-text]");
-  text.textContent = formatMonthLabel(selectedMonthFilter);
-  trigger.classList.toggle("placeholder", !selectedMonthFilter);
+  text.textContent = formatMonthRangeLabel();
+  trigger.classList.toggle("placeholder", !selectedMonthRange.start);
   picker.querySelector("[data-month-panel]").innerHTML = `<div class="quick-months">
     <button type="button" data-month-shortcut="current">本月</button>
     <button type="button" data-month-shortcut="previous">上月</button>
@@ -115,7 +155,7 @@ function renderMonthPicker() {
     <div class="month-year"><button type="button" data-month-year="prev">«</button><strong>${monthPanelYear} 年</strong><button type="button" data-month-year="next">»</button></div>
     <div class="month-grid">${monthNames.map((name, index) => {
       const value = `${monthPanelYear}-${String(index + 1).padStart(2, "0")}`;
-      return `<button type="button" class="${selectedMonthFilter === value ? "selected" : ""}" data-month-value="${value}">${name}</button>`;
+      return `<button type="button" class="${monthButtonClass(value)}" data-month-value="${value}">${name}</button>`;
     }).join("")}</div>
   </div>`;
 }
@@ -320,19 +360,20 @@ function syncSelectionState(pageRecords = []) {
 }
 
 function applyFilters() {
-  const storeCodes = getFilterGroupCodes(), name = $("#nameFilter").value.trim(), employeeIds = parseMultiValueText($("#employeeIdFilter").value), month = selectedMonthFilter;
+  const storeCodes = getFilterGroupCodes(), name = $("#nameFilter").value.trim(), employeeIds = parseMultiValueText($("#employeeIdFilter").value), { start: monthStart, end: monthEnd } = selectedMonthRange;
   const min = Number($("#minAmount").value || 0), max = Number($("#maxAmount").value || Number.MAX_SAFE_INTEGER), keyword = $("#globalSearch").value.trim();
   filteredRecords = records.filter(record => {
     const recordGroup = baseGroup(record.group);
     const teamName = groupToTeam.get(recordGroup) || "";
-    return (!storeCodes || storeCodes.has(recordGroup)) && (!name || record.employeeName.includes(name)) && (!employeeIds.length || employeeIds.some(employeeId => record.employeeId.includes(employeeId))) && (!month || record.month === month) && record.amount >= min && record.amount <= max && (!keyword || [record.group, teamName, storeTree.code, record.employeeName, record.employeeId, record.month, record.updatedBy].some(value => String(value).includes(keyword)));
+    const inMonthRange = !monthStart || record.month >= monthStart && record.month <= (monthEnd || monthStart);
+    return (!storeCodes || storeCodes.has(recordGroup)) && (!name || record.employeeName.includes(name)) && (!employeeIds.length || employeeIds.some(employeeId => record.employeeId.includes(employeeId))) && inMonthRange && record.amount >= min && record.amount <= max && (!keyword || [record.group, teamName, storeTree.code, record.employeeName, record.employeeId, record.month, record.updatedBy].some(value => String(value).includes(keyword)));
   });
   currentPage = 1; selectedIds.clear(); render(); toast(`查询完成，共 ${filteredRecords.length} 条数据`);
 }
 
 function resetFilters() {
   selectedStoreFilter = { type: "", value: "" };
-  selectedMonthFilter = "";
+  selectedMonthRange = { start: "", end: "" };
   renderStoreCascade();
   renderMonthPicker();
   ["#nameFilter", "#employeeIdFilter", "#minAmount", "#maxAmount", "#globalSearch"].forEach(selector => $(selector).value = "");
@@ -436,12 +477,16 @@ $("#monthFilter").addEventListener("click", event => {
   const shortcut = event.target.closest("[data-month-shortcut]");
   if (trigger) { event.preventDefault(); event.stopPropagation(); closeStoreCascade(); closeMultiSelects(); $("#monthFilter").classList.toggle("open"); }
   if (yearBtn) { event.preventDefault(); event.stopPropagation(); monthPanelYear += yearBtn.dataset.monthYear === "prev" ? -1 : 1; renderMonthPicker(); $("#monthFilter").classList.add("open"); }
-  if (monthBtn) { event.preventDefault(); event.stopPropagation(); setSelectedMonth(monthBtn.dataset.monthValue); closeMonthPicker(); }
+  if (monthBtn) {
+    event.preventDefault(); event.stopPropagation();
+    const wasPickingEnd = selectedMonthRange.start && !selectedMonthRange.end;
+    pickMonthRange(monthBtn.dataset.monthValue);
+    if (wasPickingEnd) closeMonthPicker();
+  }
   if (shortcut) {
     event.preventDefault(); event.stopPropagation();
-    const now = "2026-07";
-    const map = { current: now, previous: "2026-06", recent3: "2026-05", quarter: "2026-07", year: "2026-01", lastYear: "2025-12" };
-    setSelectedMonth(map[shortcut.dataset.monthShortcut] || now);
+    const [start, end] = shortcutMonthRange(shortcut.dataset.monthShortcut);
+    setSelectedMonthRange(start, end);
     closeMonthPicker();
   }
 });
