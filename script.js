@@ -3,10 +3,10 @@ const storeTree = {
   name: "首都T3门店",
   manager: "李晓楠",
   teams: [
-    { name: "T3香化", groups: ["7222201", "7222401", "7221301", "7222501"] },
-    { name: "T3烟酒", groups: ["7221201", "7221501", "7222301", "7222901"] },
-    { name: "T3精品专卖", groups: ["7221601", "7221602", "7221603", "7221604", "7221605", "7221607", "7221801", "7221704", "7222801", "7222802", "7222803", "7222804", "7222805", "7222806"] },
-    { name: "T3精品综合", groups: ["7221401", "7221606", "7221701", "7221702", "7221802", "7221901", "7221902", "7222601", "7222602", "7222603", "7222604", "7222701", "7222702", "7223001"] },
+    { name: "T3香化", groups: ["72222201", "72222401", "72221301", "72222501"] },
+    { name: "T3烟酒", groups: ["72221201", "72221501", "72222301", "72222901"] },
+    { name: "T3精品专卖", groups: ["72221601", "72221602", "72221603", "72221604", "72221605", "72221607", "72221801", "72221704", "72222801", "72222802", "72222803", "72222804", "72222805", "72222806"] },
+    { name: "T3精品综合", groups: ["72221401", "72221606", "72221701", "72221702", "72221802", "72221901", "72221902", "72222601", "72222602", "72222603", "72222604", "72222701", "72222702", "72223001"] },
     { name: "T3入境", groups: ["72225101", "72225102", "72225103", "72225104"] }
   ]
 };
@@ -14,6 +14,7 @@ const groups = storeTree.teams.flatMap(team => team.groups);
 const groupToTeam = new Map(storeTree.teams.flatMap(team => team.groups.map(group => [group, team.name])));
 const splitGroupCodes = new Set(["72225101", "72225104"]);
 const splitAreas = ["烟区", "精品区", "酒水区", "香化A", "香化B"];
+const monthNames = ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"];
 const employees = [
   { name: "陈亚琳", id: "30202606081021" }, { name: "唐伟", id: "30202606081022" }, { name: "蒙海晓", id: "30202606081023" }, { name: "胡巧菊", id: "30202606081024" },
   { name: "王一诺", id: "30202606081025" }, { name: "赵敏", id: "30202606081026" }, { name: "李明", id: "30202606081027" }, { name: "刘佳", id: "30202606081028" },
@@ -28,6 +29,8 @@ let pageSize = 30;
 let editingId = null;
 let pickedFileName = "";
 let selectedStoreFilter = { type: "", value: "" };
+let selectedMonthFilter = "";
+let monthPanelYear = 2026;
 
 const $ = selector => document.querySelector(selector);
 const body = $("#tableBody");
@@ -50,7 +53,7 @@ function groupNeedsArea(group) { return splitGroupCodes.has(baseGroup(group)); }
 
 function fillOptions() {
   renderStoreCascade();
-  $("#monthFilter").innerHTML = `<option value="">请选择月份</option>${optionHtml(months, item => item, item => item, "")}`;
+  renderMonthPicker();
 }
 
 function storeFilterLabel() {
@@ -83,6 +86,42 @@ function getFilterGroupCodes() {
   return null;
 }
 
+function formatMonthLabel(value) {
+  if (!value) return "开始日期　-　结束日期";
+  const [year, month] = value.split("-");
+  return `${year} 年 ${Number(month)} 月`;
+}
+
+function setSelectedMonth(value) {
+  selectedMonthFilter = value;
+  if (value) monthPanelYear = Number(value.slice(0, 4));
+  renderMonthPicker();
+}
+
+function renderMonthPicker() {
+  const picker = $("#monthFilter");
+  const trigger = picker.querySelector("[data-month-trigger]");
+  const text = picker.querySelector("[data-month-text]");
+  text.textContent = formatMonthLabel(selectedMonthFilter);
+  trigger.classList.toggle("placeholder", !selectedMonthFilter);
+  picker.querySelector("[data-month-panel]").innerHTML = `<div class="quick-months">
+    <button type="button" data-month-shortcut="current">本月</button>
+    <button type="button" data-month-shortcut="previous">上月</button>
+    <button type="button" data-month-shortcut="recent3">近3个月</button>
+    <button type="button" data-month-shortcut="quarter">本季</button>
+    <button type="button" data-month-shortcut="year">今年</button>
+    <button type="button" data-month-shortcut="lastYear">去年</button>
+  </div><div class="month-grid-wrap">
+    <div class="month-year"><button type="button" data-month-year="prev">«</button><strong>${monthPanelYear} 年</strong><button type="button" data-month-year="next">»</button></div>
+    <div class="month-grid">${monthNames.map((name, index) => {
+      const value = `${monthPanelYear}-${String(index + 1).padStart(2, "0")}`;
+      return `<button type="button" class="${selectedMonthFilter === value ? "selected" : ""}" data-month-value="${value}">${name}</button>`;
+    }).join("")}</div>
+  </div>`;
+}
+
+function closeMonthPicker() { $("#monthFilter").classList.remove("open"); }
+
 function normalizeRecordForForm(record = {}) {
   const rawGroup = record.group || "";
   const group = baseGroup(rawGroup);
@@ -114,6 +153,10 @@ function createMultiSelect(field, items, selectedValues, placeholder, getValue, 
       }).join("")}
     </div>
   </div>`;
+}
+
+function createSingleSelect(field, items, selectedValue, placeholder, getValue, getLabel = getValue) {
+  return `<select data-field="${field}"><option value="">${escapeHtml(placeholder)}</option>${optionHtml(items, getValue, getLabel, selectedValue || "")}</select>`;
 }
 
 function getSelectedValues(line, field) {
@@ -165,7 +208,8 @@ function clearMultiSelect(multi) {
 
 function syncAreaSelect(line) {
   const areaSelect = line.querySelector('[data-field="area"]');
-  const enabled = getSelectedValues(line, "group").some(groupNeedsArea);
+  const group = line.querySelector('[data-field="group"]').value;
+  const enabled = groupNeedsArea(group);
   areaSelect.disabled = !enabled;
   if (!enabled) areaSelect.value = "";
   areaSelect.options[0].textContent = enabled ? "请选择分区" : "无需选择分区";
@@ -177,14 +221,14 @@ function syncFormLineState() {
 }
 
 function createFormLine(data = {}, canRemove = false) {
-  const selectedGroups = normalizeSelected(data.groups || data.group);
+  const selectedGroup = normalizeSelected(data.groups || data.group)[0] || "";
   const selectedEmployeeIds = normalizeSelected(data.employeeIds || data.employeeId);
   const month = data.month || "";
   const amount = data.amount ?? "";
   const area = data.area || "";
-  const areaEnabled = selectedGroups.some(groupNeedsArea);
+  const areaEnabled = groupNeedsArea(selectedGroup);
   return `<div class="add-row" data-form-line>
-    ${createMultiSelect("group", groups, selectedGroups, "请选择柜组", item => item, item => item)}
+    ${createSingleSelect("group", groups, selectedGroup, "请选择柜组", item => item, item => item)}
     <select data-field="area" ${areaEnabled ? "" : "disabled"}><option value="">${areaEnabled ? "请选择分区" : "无需选择分区"}</option>${optionHtml(splitAreas, item => item, item => item, area)}</select>
     ${createMultiSelect("employeeId", employees, selectedEmployeeIds, "请选择员工", item => item.id, item => `${item.name} / ${item.id}`, item => item.name)}
     <select data-field="month"><option value="">请选择月份</option>${optionHtml(months, item => item, item => item, month)}</select>
@@ -208,23 +252,21 @@ function readFormLines() {
   const lines = [...document.querySelectorAll("[data-form-line]")];
   lines.forEach((line, index) => {
     const prefix = lines.length > 1 ? `第${index + 1}行：` : "";
-    const selectedGroups = getSelectedValues(line, "group");
+    const selectedGroup = line.querySelector('[data-field="group"]').value;
     const selectedEmployeeIds = getSelectedValues(line, "employeeId");
     const month = line.querySelector('[data-field="month"]').value;
     const area = line.querySelector('[data-field="area"]').value;
     const amountText = line.querySelector('[data-field="amount"]').value.trim();
     const amount = Number(amountText);
-    if (!selectedGroups.length) errors.push(`${prefix}请选择柜组`);
+    if (!selectedGroup) errors.push(`${prefix}请选择柜组`);
     if (!selectedEmployeeIds.length) errors.push(`${prefix}请选择员工`);
     if (!month) errors.push(`${prefix}请选择月份`);
     if (!amountText) errors.push(`${prefix}请输入目标销售额`);
     if (amountText && Number.isNaN(amount)) errors.push(`${prefix}请输入正确的目标销售额`);
     if (errors.length) return;
-    selectedGroups.forEach(group => {
-      selectedEmployeeIds.forEach(employeeId => {
-        const employee = employees.find(item => item.id === employeeId);
-        rows.push({ group, employeeName: employee.name, employeeId, month, area, amount });
-      });
+    selectedEmployeeIds.forEach(employeeId => {
+      const employee = employees.find(item => item.id === employeeId);
+      rows.push({ group: selectedGroup, employeeName: employee.name, employeeId, month, area, amount });
     });
   });
   return { rows, errors };
@@ -278,7 +320,7 @@ function syncSelectionState(pageRecords = []) {
 }
 
 function applyFilters() {
-  const storeCodes = getFilterGroupCodes(), name = $("#nameFilter").value.trim(), employeeIds = parseMultiValueText($("#employeeIdFilter").value), month = $("#monthFilter").value;
+  const storeCodes = getFilterGroupCodes(), name = $("#nameFilter").value.trim(), employeeIds = parseMultiValueText($("#employeeIdFilter").value), month = selectedMonthFilter;
   const min = Number($("#minAmount").value || 0), max = Number($("#maxAmount").value || Number.MAX_SAFE_INTEGER), keyword = $("#globalSearch").value.trim();
   filteredRecords = records.filter(record => {
     const recordGroup = baseGroup(record.group);
@@ -290,8 +332,10 @@ function applyFilters() {
 
 function resetFilters() {
   selectedStoreFilter = { type: "", value: "" };
+  selectedMonthFilter = "";
   renderStoreCascade();
-  ["#nameFilter", "#employeeIdFilter", "#monthFilter", "#minAmount", "#maxAmount", "#globalSearch"].forEach(selector => $(selector).value = "");
+  renderMonthPicker();
+  ["#nameFilter", "#employeeIdFilter", "#minAmount", "#maxAmount", "#globalSearch"].forEach(selector => $(selector).value = "");
   filteredRecords = [...records]; selectedIds.clear(); currentPage = 1; render(); toast("筛选条件已重置");
 }
 
@@ -367,7 +411,6 @@ $("#batchDeleteBtn").addEventListener("click", batchDelete);
 $("#saveBtn").addEventListener("click", saveRecord);
 $("#confirmImportBtn").addEventListener("click", simulateImport);
 $("#exportBtn").addEventListener("click", exportCurrentPage);
-$("#syncBtn").addEventListener("click", () => toast("任务拆分已更新"));
 $("#pickEmployeeBtn").addEventListener("click", openEmployeeIdMultiValue);
 $("#multiValueInput").addEventListener("input", updateMultiValueCount);
 $("#confirmMultiValueBtn").addEventListener("click", confirmEmployeeIdMultiValue);
@@ -386,10 +429,25 @@ $("#storeFilter").addEventListener("mouseover", event => {
   document.querySelectorAll(".cascade-group-list").forEach(list => list.classList.toggle("active", list.dataset.team === teamOption.dataset.cascadeValue));
   document.querySelectorAll(".team-col .cascade-option").forEach(option => option.classList.toggle("hover", option === teamOption));
 });
+$("#monthFilter").addEventListener("click", event => {
+  const trigger = event.target.closest("[data-month-trigger]");
+  const yearBtn = event.target.closest("[data-month-year]");
+  const monthBtn = event.target.closest("[data-month-value]");
+  const shortcut = event.target.closest("[data-month-shortcut]");
+  if (trigger) { event.preventDefault(); event.stopPropagation(); closeStoreCascade(); closeMultiSelects(); $("#monthFilter").classList.toggle("open"); }
+  if (yearBtn) { event.preventDefault(); event.stopPropagation(); monthPanelYear += yearBtn.dataset.monthYear === "prev" ? -1 : 1; renderMonthPicker(); $("#monthFilter").classList.add("open"); }
+  if (monthBtn) { event.preventDefault(); event.stopPropagation(); setSelectedMonth(monthBtn.dataset.monthValue); closeMonthPicker(); }
+  if (shortcut) {
+    event.preventDefault(); event.stopPropagation();
+    const now = "2026-07";
+    const map = { current: now, previous: "2026-06", recent3: "2026-05", quarter: "2026-07", year: "2026-01", lastYear: "2025-12" };
+    setSelectedMonth(map[shortcut.dataset.monthShortcut] || now);
+    closeMonthPicker();
+  }
+});
 $("#formLines").addEventListener("change", event => {
   if (event.target.matches('[data-field="group"]')) {
     const line = event.target.closest("[data-form-line]");
-    updateMultiSelect(event.target.closest("[data-multi]"));
     syncAreaSelect(line);
   }
   if (event.target.matches('[data-field="employeeId"]')) updateMultiSelect(event.target.closest("[data-multi]"));
@@ -415,6 +473,7 @@ $("#formLines").addEventListener("click", event => {
 document.addEventListener("click", event => {
   if (!event.target.closest(".multi-select")) closeMultiSelects();
   if (!event.target.closest("#storeFilter")) closeStoreCascade();
+  if (!event.target.closest("#monthFilter")) closeMonthPicker();
   if (event.target.matches("[data-close]")) closeModals();
   if (event.target.dataset.edit) { event.preventDefault(); openEditor(records.find(record => record.id === event.target.dataset.edit)); }
   if (event.target.dataset.copy) { event.preventDefault(); openEditor(records.find(record => record.id === event.target.dataset.copy), true); }

@@ -32,13 +32,30 @@ select,input { outline:none; }
 .filter-grid label>span { width:92px; text-align:right; white-space:nowrap; color:#3f4855; }
 input,select,.date { height:36px; border:1px solid #d5dee9; background:#fff; border-radius:4px; padding:0 14px; color:#4c5968; min-width:0; }
 input::placeholder { color:#a4aebc; }
-label input,label select,label .date,.lookup,.cascade-select { width:260px; }
+label input,label select,label .date,.lookup,.cascade-select,.month-picker { width:260px; }
 .cascade-select { position:relative; }
 .cascade-trigger { width:100%; height:36px; border:1px solid #d5dee9; background:#fff; border-radius:4px; padding:0 12px 0 14px; color:#4c5968; display:flex; align-items:center; justify-content:space-between; }
 .cascade-trigger.placeholder { color:#a4aebc; }
 .cascade-trigger span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .cascade-trigger b { color:#7b8794; font-weight:500; }
 .cascade-select.open .cascade-trigger { border-color:#1688f0; box-shadow:0 0 0 2px rgba(22,136,240,.1); }
+.month-picker { position:relative; }
+.month-trigger { width:100%; height:36px; border:1px solid #1688f0; background:#fff; border-radius:4px; padding:0 14px; color:#4c5968; display:flex; align-items:center; gap:14px; }
+.month-trigger.placeholder { color:#a4aebc; }
+.calendar-icon { color:#aeb8c6; font-size:18px; line-height:1; }
+.month-panel { display:none; position:absolute; left:-20px; top:42px; width:640px; height:360px; border:1px solid #d5dee9; background:#fff; box-shadow:0 8px 20px rgba(16,24,40,.14); z-index:45; }
+.month-panel:before { content:""; position:absolute; top:-9px; left:92px; width:18px; height:18px; background:#fff; border-left:1px solid #d5dee9; border-top:1px solid #d5dee9; transform:rotate(45deg); }
+.month-picker.open .month-panel { display:flex; }
+.quick-months { width:160px; border-right:1px solid #dfe5ee; padding:18px 0; display:flex; flex-direction:column; }
+.quick-months button { height:40px; padding:0 28px; color:#4c5968; text-align:left; font-size:18px; }
+.quick-months button:hover { color:#1688f0; background:#f4f9ff; }
+.month-grid-wrap { flex:1; padding:28px 34px 20px; }
+.month-year { height:42px; display:flex; align-items:center; justify-content:space-between; color:#4c5968; font-size:18px; }
+.month-year button { width:36px; height:36px; color:#183b5b; font-size:28px; }
+.month-year strong { font-size:24px; font-weight:600; }
+.month-grid { display:grid; grid-template-columns:repeat(4,1fr); grid-template-rows:repeat(3,70px); margin-top:18px; }
+.month-grid button { color:#4c5968; font-size:18px; }
+.month-grid button:hover,.month-grid button.selected { color:#1688f0; font-weight:700; }
 .cascade-panel { display:none; position:absolute; left:0; top:42px; width:760px; height:292px; border:1px solid #d5dee9; border-radius:4px; background:#fff; box-shadow:0 8px 20px rgba(16,24,40,.14); z-index:40; overflow:hidden; }
 .cascade-select.open .cascade-panel { display:flex; }
 .cascade-col { width:252px; height:100%; overflow:auto; padding:8px 0; border-right:1px solid #e5ebf3; }
@@ -58,7 +75,7 @@ label input,label select,label .date,.lookup,.cascade-select { width:260px; }
 .range input { width:110px; }
 .range em { font-style:normal; color:#778396; }
 .filter-buttons { display:flex; gap:12px; }
-.primary,.outline,.danger,.ghost,.sync { height:36px; padding:0 20px; border-radius:4px; border:1px solid transparent; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; }
+.primary,.outline,.danger,.ghost { height:36px; padding:0 20px; border-radius:4px; border:1px solid transparent; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; }
 .primary { background:var(--blue); color:#fff; }
 .ghost { background:#f1f3f5; color:#2586e8; border-color:#edf0f3; }
 .ghost[data-close] { background:#fff; color:#667085; border-color:#d8dee8; }
@@ -66,7 +83,6 @@ label input,label select,label .date,.lookup,.cascade-select { width:260px; }
 .outline { color:#0c78d6; background:#ecf5ff; border-color:#aad0f5; }
 .disabled,.outline:disabled,.danger:disabled { color:#9aa8bb !important; background:#eef2f7 !important; border-color:#d8e1ec !important; cursor:not-allowed; }
 .danger { color:var(--danger); background:#fff1f1; border-color:#ffc8c8; }
-.sync { background:#80bdf3; color:#fff; }
 .dataset-link { height:36px; padding:0 16px; border:1px solid #c8d8ea; border-radius:4px; color:#475467; background:#fff; display:inline-flex; align-items:center; text-decoration:none; }
 .collapse { position:absolute; left:50%; bottom:-10px; transform:translateX(-50%); color:#8794a6; font-size:24px; background:#fff; width:36px; height:22px; }
 .toolbar { height:64px; padding:14px 8px; background:#fff; display:flex; justify-content:space-between; border-bottom:1px solid var(--line); }

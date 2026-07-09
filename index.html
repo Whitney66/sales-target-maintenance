@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>员工销售目标维护 - 高保真原型</title>
-  <link rel="stylesheet" href="./styles.css?v=20260706-cascade-clear" />
+  <link rel="stylesheet" href="./styles.css?v=20260709-month-picker" />
 </head>
 <body>
   <div class="app">
@@ -33,7 +33,7 @@
           <label><span>门店</span><div class="cascade-select" id="storeFilter"><button type="button" class="cascade-trigger placeholder" data-cascade-trigger><span data-cascade-text>请选择门店/团队/柜组</span><b>⌄</b></button><div class="cascade-panel" data-cascade-panel></div></div></label>
           <label><span>姓名</span><input id="nameFilter" placeholder="请输入姓名" /></label>
           <label><span>工号</span><div class="lookup"><input id="employeeIdFilter" placeholder="请输入工号" /><button id="pickEmployeeBtn">•••</button></div></label>
-          <label><span>月份</span><select id="monthFilter"><option value="">请选择月份</option></select></label>
+          <label><span>月份</span><div class="month-picker" id="monthFilter"><button type="button" class="month-trigger placeholder" data-month-trigger><span class="calendar-icon">▦</span><span data-month-text>开始日期　-　结束日期</span></button><div class="month-panel" data-month-panel></div></div></label>
           <label class="amount"><span>目标销售额(元)</span><div class="range"><input id="minAmount" type="number" placeholder="请输入" /><em>-</em><input id="maxAmount" type="number" placeholder="请输入" /></div></label>
           <div class="filter-buttons"><button class="primary small" id="queryBtn">⌕ 查询</button><button class="ghost small" id="resetBtn">↻ 重置</button></div>
         </div>
@@ -48,7 +48,6 @@
           <button class="danger disabled" id="batchDeleteBtn" disabled>▥ 批量删除</button>
           <a class="dataset-link" href="./test-data/sales-target-test-data.csv" download>测试数据集</a>
         </div>
-        <button class="sync" id="syncBtn">更新任务拆分</button>
       </section>
 
       <section class="table-wrap">
@@ -104,6 +103,6 @@
   </div>
 
   <div class="toast" id="toast" hidden></div>
-  <script src="./script.js?v=20260706-cascade-clear"></script>
+  <script src="./script.js?v=20260709-month-picker"></script>
 </body>
 </html>
