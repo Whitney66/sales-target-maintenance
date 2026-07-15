@@ -16,10 +16,12 @@ const splitGroupCodes = new Set(["72225101", "72225104"]);
 const splitAreas = ["烟区", "精品区", "酒水区", "香化A", "香化B"];
 const monthNames = ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"];
 const employees = [
-  { name: "陈亚琳", id: "30202606081021" }, { name: "唐伟", id: "30202606081022" }, { name: "蒙海晓", id: "30202606081023" }, { name: "胡巧菊", id: "30202606081024" },
-  { name: "王一诺", id: "30202606081025" }, { name: "赵敏", id: "30202606081026" }, { name: "李明", id: "30202606081027" }, { name: "刘佳", id: "30202606081028" },
-  { name: "周晴", id: "30202606081029" }, { name: "吴越", id: "30202606081030" }, { name: "孙晨", id: "30202606081031" }, { name: "黄静", id: "30202606081032" }
+  { name: "陈亚琳", id: "26081021" }, { name: "唐伟", id: "26081022" }, { name: "蒙海晓", id: "26081023" }, { name: "胡巧菊", id: "26081024" },
+  { name: "王一诺", id: "26081025" }, { name: "赵敏", id: "26081026" }, { name: "李明", id: "26081027" }, { name: "刘佳", id: "26081028" },
+  { name: "周晴", id: "26081029" }, { name: "吴越", id: "26081030" }, { name: "孙晨", id: "26081031" }, { name: "黄静", id: "26081032" }
 ];
+const allowedImportGroups = new Set(groups.slice(0, 18));
+let duplicateRecordKeys = new Set();
 const months = ["2026-07", "2026-06", "2026-05", "2026-04"];
 let records = createRecords();
 let filteredRecords = [...records];
@@ -41,7 +43,7 @@ function createRecords() {
     const employee = employees[index % employees.length];
     const group = groups[index % groups.length];
     const month = months[Math.floor(index / 24) % months.length];
-    return { id: `target-${index + 1}`, group, employeeName: employee.name, employeeId: employee.id, month, amount: index % 11 === 0 ? 0 : 20000 + (index % 17) * 3500 + Math.floor(index / 8) * 1000, updatedBy: editors[index % editors.length], updatedAt: `2026-07-${String(3 - Math.min(2, Math.floor(index / 36))).padStart(2, "0")} ${String(10 + (index % 7)).padStart(2, "0")}:${String(16 + (index % 40)).padStart(2, "0")}:24` };
+    return { id: `target-${index + 1}`, group, employeeName: employee.name, employeeId: employee.id, month, attendanceDays: 22 + (index % 5), amount: index % 11 === 0 ? 0 : 20000 + (index % 17) * 3500 + Math.floor(index / 8) * 1000, updatedBy: editors[index % editors.length], updatedAt: `2026-07-${String(3 - Math.min(2, Math.floor(index / 36))).padStart(2, "0")} ${String(10 + (index % 7)).padStart(2, "0")}:${String(16 + (index % 40)).padStart(2, "0")}:24` };
   });
 }
 
@@ -50,6 +52,10 @@ function escapeHtml(value = "") { return String(value).replace(/[&<>"']/g, char 
 function optionHtml(items, getValue, getLabel, selected) { return items.map(item => `<option value="${escapeHtml(getValue(item))}" ${getValue(item) === selected ? "selected" : ""}>${escapeHtml(getLabel(item))}</option>`).join(""); }
 function baseGroup(value = "") { return String(value).split("-")[0]; }
 function groupNeedsArea(group) { return splitGroupCodes.has(baseGroup(group)); }
+function recordUniqueKey(record) { return [record.month, baseGroup(record.group), record.employeeName, record.employeeId].join("|"); }
+function isEightDigitEmployeeId(value) { return /^\d{8}$/.test(String(value || "")); }
+function markDuplicateKeys(keys = []) { duplicateRecordKeys = new Set(keys); render(); }
+function alertDuplicate(message, keys = []) { markDuplicateKeys(keys); alert(message); }
 
 function fillOptions() {
   renderStoreCascade();
@@ -265,6 +271,7 @@ function createFormLine(data = {}, canRemove = false) {
   const selectedEmployeeIds = normalizeSelected(data.employeeIds || data.employeeId);
   const month = data.month || "";
   const amount = data.amount ?? "";
+  const attendanceDays = data.attendanceDays ?? "";
   const area = data.area || "";
   const areaEnabled = groupNeedsArea(selectedGroup);
   return `<div class="add-row" data-form-line>
@@ -272,6 +279,7 @@ function createFormLine(data = {}, canRemove = false) {
     <select data-field="area" ${areaEnabled ? "" : "disabled"}><option value="">${areaEnabled ? "请选择分区" : "无需选择分区"}</option>${optionHtml(splitAreas, item => item, item => item, area)}</select>
     ${createMultiSelect("employeeId", employees, selectedEmployeeIds, "请选择员工", item => item.id, item => `${item.name} / ${item.id}`, item => item.name)}
     <select data-field="month"><option value="">请选择月份</option>${optionHtml(months, item => item, item => item, month)}</select>
+    <input data-field="attendanceDays" type="number" min="0" max="31" placeholder="出勤天数" value="${escapeHtml(attendanceDays)}" />
     <input data-field="amount" type="number" min="0" placeholder="请输入目标销售额（元）" value="${escapeHtml(amount)}" />
     <div class="row-actions">
       <button class="round-plus" data-add-line title="增加一行">＋</button>
@@ -296,20 +304,44 @@ function readFormLines() {
     const selectedEmployeeIds = getSelectedValues(line, "employeeId");
     const month = line.querySelector('[data-field="month"]').value;
     const area = line.querySelector('[data-field="area"]').value;
+    const attendanceText = line.querySelector('[data-field="attendanceDays"]').value.trim();
+    const attendanceDays = Number(attendanceText);
     const amountText = line.querySelector('[data-field="amount"]').value.trim();
     const amount = Number(amountText);
     if (!selectedGroup) errors.push(`${prefix}请选择柜组`);
     if (!selectedEmployeeIds.length) errors.push(`${prefix}请选择员工`);
     if (!month) errors.push(`${prefix}请选择月份`);
+    if (!attendanceText) errors.push(`${prefix}请输入出勤天数`);
+    if (attendanceText && (Number.isNaN(attendanceDays) || attendanceDays < 0 || attendanceDays > 31)) errors.push(`${prefix}出勤天数需为0-31之间的数字`);
     if (!amountText) errors.push(`${prefix}请输入目标销售额`);
     if (amountText && Number.isNaN(amount)) errors.push(`${prefix}请输入正确的目标销售额`);
     if (errors.length) return;
     selectedEmployeeIds.forEach(employeeId => {
       const employee = employees.find(item => item.id === employeeId);
-      rows.push({ group: selectedGroup, employeeName: employee.name, employeeId, month, area, amount });
+      if (!isEightDigitEmployeeId(employeeId)) errors.push(`${prefix}${employee?.name || "员工"}的工号必须为8位数字`);
+      else rows.push({ group: selectedGroup, employeeName: employee.name, employeeId, month, area, attendanceDays, amount });
     });
   });
   return { rows, errors };
+}
+
+function findDuplicateRows(rows, ignoredId = null) {
+  const existingKeys = new Map(records.filter(record => record.id !== ignoredId).map(record => [recordUniqueKey(record), record]));
+  const inputKeys = new Map();
+  const duplicateKeys = new Set();
+  const messages = [];
+  rows.forEach((row, index) => {
+    const key = recordUniqueKey(row);
+    if (inputKeys.has(key)) {
+      duplicateKeys.add(key);
+      messages.push(`第${inputKeys.get(key) + 1}行与第${index + 1}行重复：${row.month} / ${baseGroup(row.group)} / ${row.employeeName} / ${row.employeeId}`);
+    } else inputKeys.set(key, index);
+    if (existingKeys.has(key)) {
+      duplicateKeys.add(key);
+      messages.push(`第${index + 1}行与已有数据重复：${row.month} / ${baseGroup(row.group)} / ${row.employeeName} / ${row.employeeId}`);
+    }
+  });
+  return { duplicateKeys: [...duplicateKeys], messages };
 }
 
 function expandSplitRows(rows, updatedAt) {
@@ -333,7 +365,10 @@ function render() {
   const totalPages = Math.max(1, Math.ceil(filteredRecords.length / pageSize));
   currentPage = Math.min(Math.max(currentPage, 1), totalPages);
   const pageRecords = filteredRecords.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  body.innerHTML = pageRecords.map(record => `<tr class="${selectedIds.has(record.id) ? "selected" : ""}"><td><input type="checkbox" data-select="${record.id}" ${selectedIds.has(record.id) ? "checked" : ""} /></td><td title="${record.group}">${record.group}</td><td>${record.employeeName}</td><td>${record.employeeId}</td><td>${record.month}</td><td>${formatAmount(record.amount)}</td><td>${record.updatedBy}</td><td>${record.updatedAt}</td><td><div class="ops"><a href="#" data-copy="${record.id}">复制</a><a href="#" data-edit="${record.id}">修改</a><a href="#" data-delete="${record.id}">删除</a></div></td></tr>`).join("");
+  body.innerHTML = pageRecords.map(record => {
+    const rowClasses = [selectedIds.has(record.id) ? "selected" : "", duplicateRecordKeys.has(recordUniqueKey(record)) ? "duplicate-row" : ""].filter(Boolean).join(" ");
+    return `<tr class="${rowClasses}"><td><input type="checkbox" data-select="${record.id}" ${selectedIds.has(record.id) ? "checked" : ""} /></td><td title="${record.group}">${record.group}</td><td>${record.employeeName}</td><td>${record.employeeId}</td><td>${record.month}</td><td>${record.attendanceDays ?? ""}</td><td>${formatAmount(record.amount)}</td><td>${record.updatedBy}</td><td>${record.updatedAt}</td><td><div class="ops"><a href="#" data-copy="${record.id}">复制</a><a href="#" data-edit="${record.id}">修改</a><a href="#" data-delete="${record.id}">删除</a></div></td></tr>`;
+  }).join("");
   $("#emptyState").hidden = filteredRecords.length > 0;
   $("#totalText").textContent = `共 ${filteredRecords.length} 条`;
   $("#jumpPage").value = currentPage;
@@ -395,6 +430,14 @@ function saveRecord() {
   if (errors.length) { $("#formTip").textContent = errors[0]; return; }
   if (rows.some(row => row.amount < 0)) { $("#formTip").textContent = "目标销售额不能小于 0"; return; }
   if (editingId && rows.length !== 1) { $("#formTip").textContent = "修改时仅支持选择一个柜组和一名员工"; return; }
+  const duplicateResult = findDuplicateRows(rows, editingId);
+  if (duplicateResult.messages.length) {
+    const message = `发现重复数据，唯一值为“月份 + 柜组 + 员工姓名 + 工号”。\n${duplicateResult.messages.slice(0, 4).join("\n")}`;
+    $("#formTip").textContent = duplicateResult.messages[0];
+    alertDuplicate(message, duplicateResult.duplicateKeys);
+    return;
+  }
+  duplicateRecordKeys.clear();
   const updatedAt = "2026-07-03 17:30:00";
   if (editingId) {
     const row = rows[0];
@@ -423,15 +466,44 @@ function batchDelete() {
 
 function simulateImport() {
   const updateExisting = $("#updateExisting").checked;
-  const imported = [{ id: `import-${Date.now()}-1`, group: groups[36], employeeName: "测试员工A", employeeId: "30990000000001", month: "2026-07", amount: 68000, updatedBy: "导入用户", updatedAt: "2026-07-03 17:35:00" }, { id: `import-${Date.now()}-2`, group: groups[37], employeeName: "测试员工B", employeeId: "30990000000002", month: "2026-07", amount: 72000, updatedBy: "导入用户", updatedAt: "2026-07-03 17:35:00" }];
-  records = updateExisting ? [...imported, ...records.slice(2)] : [...imported, ...records]; filteredRecords = [...records]; selectedIds.clear(); currentPage = 1; closeModals(); render(); toast(`${pickedFileName || "测试数据"} 导入成功，新增 ${imported.length} 条`);
+  const importedRows = [
+    { group: groups[0], employeeName: "陈亚琳", employeeId: "26081021", month: "2026-07", attendanceDays: 24, amount: 68000 },
+    { group: groups[16], employeeName: "测试员工B", employeeId: "99000002", month: "2026-07", attendanceDays: 23, amount: 72000 }
+  ];
+  const permissionDenied = importedRows.filter(row => !allowedImportGroups.has(baseGroup(row.group)));
+  const invalidEmployee = importedRows.find(row => !isEightDigitEmployeeId(row.employeeId));
+  if (permissionDenied.length) { alert(`导入失败：存在无权限柜组 ${permissionDenied.map(row => row.group).join("、")}，数据权限需按柜组控制。`); return; }
+  if (invalidEmployee) { alert(`导入失败：${invalidEmployee.employeeName} 的工号必须为8位数字。`); return; }
+  const duplicateResult = updateExisting ? { messages: [], duplicateKeys: [] } : findDuplicateRows(importedRows);
+  if (duplicateResult.messages.length) {
+    alertDuplicate(`导入失败：发现重复数据，已高亮表格中的重复行。\n${duplicateResult.messages.slice(0, 4).join("\n")}`, duplicateResult.duplicateKeys);
+    closeModals();
+    return;
+  }
+  const imported = importedRows.map((row, index) => ({ id: `import-${Date.now()}-${index + 1}`, ...row, updatedBy: "导入用户", updatedAt: "2026-07-03 17:35:00" }));
+  duplicateRecordKeys.clear();
+  records = updateExisting ? [...imported, ...records.filter(record => !new Set(imported.map(recordUniqueKey)).has(recordUniqueKey(record)))] : [...imported, ...records];
+  filteredRecords = [...records]; selectedIds.clear(); currentPage = 1; closeModals(); render(); toast(`${pickedFileName || "测试数据"} 导入成功，新增 ${imported.length} 条`);
+}
+
+function downloadCsv(filename, csv) {
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+  const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = filename; link.click(); URL.revokeObjectURL(link.href);
+}
+
+function downloadTemplate() {
+  const csv = [
+    "月份,柜组,员工姓名,工号,出勤天数,目标销售额（元）,规则说明",
+    "2026-07,72222201,陈亚琳,26081021,24,100000,数据权限按柜组控制；唯一值=月份+柜组+员工姓名+工号；工号必须为8位数字",
+    "2026-07,72222401,唐伟,26081022,23,125000,出勤天数必填且建议为0-31之间数字"
+  ].join("\n");
+  downloadCsv("员工-柜组导入模板.csv", csv);
 }
 
 function exportCurrentPage() {
   const rows = filteredRecords.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  const csv = ["柜组,员工姓名,工号,月份,目标销售额（元）,最后更新人,最后更新时间", ...rows.map(row => [row.group, row.employeeName, row.employeeId, row.month, row.amount, row.updatedBy, row.updatedAt].join(","))].join("\n");
-  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
-  const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "sales-target-current-page.csv"; link.click(); URL.revokeObjectURL(link.href);
+  const csv = ["柜组,员工姓名,工号,月份,出勤天数,目标销售额（元）,最后更新人,最后更新时间", ...rows.map(row => [row.group, row.employeeName, row.employeeId, row.month, row.attendanceDays ?? "", row.amount, row.updatedBy, row.updatedAt].join(","))].join("\n");
+  downloadCsv("sales-target-current-page.csv", csv);
 }
 
 function toast(message) { const el = $("#toast"); el.textContent = message; el.hidden = false; clearTimeout(toast.timer); toast.timer = setTimeout(() => el.hidden = true, 1800); }
@@ -447,6 +519,7 @@ $("#pageNumbers").addEventListener("click", event => { if (event.target.dataset.
 $("#jumpPage").addEventListener("keydown", event => { if (event.key === "Enter") { currentPage = Number(event.target.value) || 1; render(); } });
 $("#addBtn").addEventListener("click", () => openEditor(null));
 $("#editSelectedBtn").addEventListener("click", () => openEditor(records.find(record => selectedIds.has(record.id))));
+$("#templateBtn").addEventListener("click", downloadTemplate);
 $("#importBtn").addEventListener("click", () => openModal("#importModal"));
 $("#batchDeleteBtn").addEventListener("click", batchDelete);
 $("#saveBtn").addEventListener("click", saveRecord);
