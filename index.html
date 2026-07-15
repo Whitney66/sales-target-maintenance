@@ -44,7 +44,6 @@
         <div>
           <button class="primary" id="addBtn">新增</button>
           <button class="outline disabled" id="editSelectedBtn" disabled>修改</button>
-          <button class="outline" id="templateBtn">下载员工-柜组模板</button>
           <button class="outline" id="importBtn">导入</button>
           <button class="danger disabled" id="batchDeleteBtn" disabled>▥ 批量删除</button>
           <a class="dataset-link" href="./test-data/sales-target-test-data.csv" download>测试数据集</a>
@@ -81,8 +80,9 @@
       <div class="import-rules">
         <strong>导入校验说明</strong>
         <span>数据权限按柜组控制，仅允许导入当前用户所属柜组。</span>
-        <span>唯一值按“月份 + 柜组 + 员工姓名 + 工号”校验，重复数据提交或导入时弹窗提醒并高亮重复行。</span>
+        <span>唯一值按“月份 + 柜组 + 员工姓名 + 工号”校验，重复数据提交或导入时弹窗提醒。</span>
         <span>工号必须为8位数字；出勤天数为必填数字字段。</span>
+        <span>模板包含“分区”字段，仅柜组72225101和72225104需要填写；其他柜组无需填写。</span>
       </div>
       <p class="hint">仅允许导入xls、xlsx、csv格式文件。<a href="./test-data/sales-target-import-template.csv" download>下载员工-柜组Excel模板</a></p>
       <div class="modal-actions"><button class="primary" id="confirmImportBtn">确定</button><button class="ghost" data-close>取消</button></div>

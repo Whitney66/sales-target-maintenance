@@ -21,7 +21,6 @@ const employees = [
   { name: "周晴", id: "26081029" }, { name: "吴越", id: "26081030" }, { name: "孙晨", id: "26081031" }, { name: "黄静", id: "26081032" }
 ];
 const allowedImportGroups = new Set(groups.slice(0, 18));
-let duplicateRecordKeys = new Set();
 const months = ["2026-07", "2026-06", "2026-05", "2026-04"];
 let records = createRecords();
 let filteredRecords = [...records];
@@ -54,8 +53,7 @@ function baseGroup(value = "") { return String(value).split("-")[0]; }
 function groupNeedsArea(group) { return splitGroupCodes.has(baseGroup(group)); }
 function recordUniqueKey(record) { return [record.month, baseGroup(record.group), record.employeeName, record.employeeId].join("|"); }
 function isEightDigitEmployeeId(value) { return /^\d{8}$/.test(String(value || "")); }
-function markDuplicateKeys(keys = []) { duplicateRecordKeys = new Set(keys); render(); }
-function alertDuplicate(message, keys = []) { markDuplicateKeys(keys); alert(message); }
+function alertDuplicate(message) { alert(message); }
 
 function fillOptions() {
   renderStoreCascade();
@@ -205,8 +203,20 @@ function createSingleSelect(field, items, selectedValue, placeholder, getValue, 
   return `<select data-field="${field}"><option value="">${escapeHtml(placeholder)}</option>${optionHtml(items, getValue, getLabel, selectedValue || "")}</select>`;
 }
 
-function getSelectedValues(line, field) {
-  return [...line.querySelectorAll(`[data-field="${field}"]:checked`)].map(input => input.value);
+function formatEmployeeInput(data = {}) {
+  if (data.employeeText) return data.employeeText;
+  const ids = normalizeSelected(data.employeeIds || data.employeeId);
+  return ids.map(employeeId => {
+    const employee = employees.find(item => item.id === employeeId);
+    return employee ? `${employee.name} / ${employee.id}` : employeeId;
+  }).join("\n");
+}
+
+function parseEmployeeInput(value = "") {
+  return value.split(/[\n,，]+/).map(item => item.trim()).filter(Boolean).map(item => {
+    const match = item.match(/^(.+?)\s*[\/／]\s*(\d+)$/);
+    return match ? { employeeName: match[1].trim(), employeeId: match[2].trim() } : { raw: item };
+  });
 }
 
 function updateMultiSelect(multi) {
@@ -268,7 +278,7 @@ function syncFormLineState() {
 
 function createFormLine(data = {}, canRemove = false) {
   const selectedGroup = normalizeSelected(data.groups || data.group)[0] || "";
-  const selectedEmployeeIds = normalizeSelected(data.employeeIds || data.employeeId);
+  const employeeText = formatEmployeeInput(data);
   const month = data.month || "";
   const amount = data.amount ?? "";
   const attendanceDays = data.attendanceDays ?? "";
@@ -277,7 +287,7 @@ function createFormLine(data = {}, canRemove = false) {
   return `<div class="add-row" data-form-line>
     ${createSingleSelect("group", groups, selectedGroup, "请选择柜组", item => item, item => item)}
     <select data-field="area" ${areaEnabled ? "" : "disabled"}><option value="">${areaEnabled ? "请选择分区" : "无需选择分区"}</option>${optionHtml(splitAreas, item => item, item => item, area)}</select>
-    ${createMultiSelect("employeeId", employees, selectedEmployeeIds, "请选择员工", item => item.id, item => `${item.name} / ${item.id}`, item => item.name)}
+    <input data-field="employeeText" placeholder="请输入员工姓名 / 工号" value="${escapeHtml(employeeText)}" title="按“姓名 / 工号”输入，例如：陈亚琳 / 26081021" />
     <select data-field="month"><option value="">请选择月份</option>${optionHtml(months, item => item, item => item, month)}</select>
     <input data-field="attendanceDays" type="number" min="0" max="31" placeholder="出勤天数" value="${escapeHtml(attendanceDays)}" />
     <input data-field="amount" type="number" min="0" placeholder="请输入目标销售额（元）" value="${escapeHtml(amount)}" />
@@ -301,7 +311,7 @@ function readFormLines() {
   lines.forEach((line, index) => {
     const prefix = lines.length > 1 ? `第${index + 1}行：` : "";
     const selectedGroup = line.querySelector('[data-field="group"]').value;
-    const selectedEmployeeIds = getSelectedValues(line, "employeeId");
+    const employeeEntries = parseEmployeeInput(line.querySelector('[data-field="employeeText"]').value);
     const month = line.querySelector('[data-field="month"]').value;
     const area = line.querySelector('[data-field="area"]').value;
     const attendanceText = line.querySelector('[data-field="attendanceDays"]').value.trim();
@@ -309,17 +319,17 @@ function readFormLines() {
     const amountText = line.querySelector('[data-field="amount"]').value.trim();
     const amount = Number(amountText);
     if (!selectedGroup) errors.push(`${prefix}请选择柜组`);
-    if (!selectedEmployeeIds.length) errors.push(`${prefix}请选择员工`);
+    if (!employeeEntries.length) errors.push(`${prefix}请输入员工信息`);
     if (!month) errors.push(`${prefix}请选择月份`);
     if (!attendanceText) errors.push(`${prefix}请输入出勤天数`);
     if (attendanceText && (Number.isNaN(attendanceDays) || attendanceDays < 0 || attendanceDays > 31)) errors.push(`${prefix}出勤天数需为0-31之间的数字`);
     if (!amountText) errors.push(`${prefix}请输入目标销售额`);
     if (amountText && Number.isNaN(amount)) errors.push(`${prefix}请输入正确的目标销售额`);
     if (errors.length) return;
-    selectedEmployeeIds.forEach(employeeId => {
-      const employee = employees.find(item => item.id === employeeId);
-      if (!isEightDigitEmployeeId(employeeId)) errors.push(`${prefix}${employee?.name || "员工"}的工号必须为8位数字`);
-      else rows.push({ group: selectedGroup, employeeName: employee.name, employeeId, month, area, attendanceDays, amount });
+    employeeEntries.forEach(entry => {
+      if (entry.raw) errors.push(`${prefix}员工信息需按“姓名 / 工号”格式输入`);
+      else if (!isEightDigitEmployeeId(entry.employeeId)) errors.push(`${prefix}${entry.employeeName}的工号必须为8位数字`);
+      else rows.push({ group: selectedGroup, employeeName: entry.employeeName, employeeId: entry.employeeId, month, area, attendanceDays, amount });
     });
   });
   return { rows, errors };
@@ -341,7 +351,7 @@ function findDuplicateRows(rows, ignoredId = null) {
       messages.push(`第${index + 1}行与已有数据重复：${row.month} / ${baseGroup(row.group)} / ${row.employeeName} / ${row.employeeId}`);
     }
   });
-  return { duplicateKeys: [...duplicateKeys], messages };
+  return { messages };
 }
 
 function expandSplitRows(rows, updatedAt) {
@@ -365,10 +375,7 @@ function render() {
   const totalPages = Math.max(1, Math.ceil(filteredRecords.length / pageSize));
   currentPage = Math.min(Math.max(currentPage, 1), totalPages);
   const pageRecords = filteredRecords.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  body.innerHTML = pageRecords.map(record => {
-    const rowClasses = [selectedIds.has(record.id) ? "selected" : "", duplicateRecordKeys.has(recordUniqueKey(record)) ? "duplicate-row" : ""].filter(Boolean).join(" ");
-    return `<tr class="${rowClasses}"><td><input type="checkbox" data-select="${record.id}" ${selectedIds.has(record.id) ? "checked" : ""} /></td><td title="${record.group}">${record.group}</td><td>${record.employeeName}</td><td>${record.employeeId}</td><td>${record.month}</td><td>${record.attendanceDays ?? ""}</td><td>${formatAmount(record.amount)}</td><td>${record.updatedBy}</td><td>${record.updatedAt}</td><td><div class="ops"><a href="#" data-copy="${record.id}">复制</a><a href="#" data-edit="${record.id}">修改</a><a href="#" data-delete="${record.id}">删除</a></div></td></tr>`;
-  }).join("");
+  body.innerHTML = pageRecords.map(record => `<tr class="${selectedIds.has(record.id) ? "selected" : ""}"><td><input type="checkbox" data-select="${record.id}" ${selectedIds.has(record.id) ? "checked" : ""} /></td><td title="${record.group}">${record.group}</td><td>${record.employeeName}</td><td>${record.employeeId}</td><td>${record.month}</td><td>${record.attendanceDays ?? ""}</td><td>${formatAmount(record.amount)}</td><td>${record.updatedBy}</td><td>${record.updatedAt}</td><td><div class="ops"><a href="#" data-copy="${record.id}">复制</a><a href="#" data-edit="${record.id}">修改</a><a href="#" data-delete="${record.id}">删除</a></div></td></tr>`).join("");
   $("#emptyState").hidden = filteredRecords.length > 0;
   $("#totalText").textContent = `共 ${filteredRecords.length} 条`;
   $("#jumpPage").value = currentPage;
@@ -434,10 +441,9 @@ function saveRecord() {
   if (duplicateResult.messages.length) {
     const message = `发现重复数据，唯一值为“月份 + 柜组 + 员工姓名 + 工号”。\n${duplicateResult.messages.slice(0, 4).join("\n")}`;
     $("#formTip").textContent = duplicateResult.messages[0];
-    alertDuplicate(message, duplicateResult.duplicateKeys);
+    alertDuplicate(message);
     return;
   }
-  duplicateRecordKeys.clear();
   const updatedAt = "2026-07-03 17:30:00";
   if (editingId) {
     const row = rows[0];
@@ -474,14 +480,13 @@ function simulateImport() {
   const invalidEmployee = importedRows.find(row => !isEightDigitEmployeeId(row.employeeId));
   if (permissionDenied.length) { alert(`导入失败：存在无权限柜组 ${permissionDenied.map(row => row.group).join("、")}，数据权限需按柜组控制。`); return; }
   if (invalidEmployee) { alert(`导入失败：${invalidEmployee.employeeName} 的工号必须为8位数字。`); return; }
-  const duplicateResult = updateExisting ? { messages: [], duplicateKeys: [] } : findDuplicateRows(importedRows);
+  const duplicateResult = updateExisting ? { messages: [] } : findDuplicateRows(importedRows);
   if (duplicateResult.messages.length) {
-    alertDuplicate(`导入失败：发现重复数据，已高亮表格中的重复行。\n${duplicateResult.messages.slice(0, 4).join("\n")}`, duplicateResult.duplicateKeys);
+    alertDuplicate(`导入失败：发现重复数据。\n${duplicateResult.messages.slice(0, 4).join("\n")}`);
     closeModals();
     return;
   }
   const imported = importedRows.map((row, index) => ({ id: `import-${Date.now()}-${index + 1}`, ...row, updatedBy: "导入用户", updatedAt: "2026-07-03 17:35:00" }));
-  duplicateRecordKeys.clear();
   records = updateExisting ? [...imported, ...records.filter(record => !new Set(imported.map(recordUniqueKey)).has(recordUniqueKey(record)))] : [...imported, ...records];
   filteredRecords = [...records]; selectedIds.clear(); currentPage = 1; closeModals(); render(); toast(`${pickedFileName || "测试数据"} 导入成功，新增 ${imported.length} 条`);
 }
@@ -493,9 +498,10 @@ function downloadCsv(filename, csv) {
 
 function downloadTemplate() {
   const csv = [
-    "月份,柜组,员工姓名,工号,出勤天数,目标销售额（元）,规则说明",
-    "2026-07,72222201,陈亚琳,26081021,24,100000,数据权限按柜组控制；唯一值=月份+柜组+员工姓名+工号；工号必须为8位数字",
-    "2026-07,72222401,唐伟,26081022,23,125000,出勤天数必填且建议为0-31之间数字"
+    "月份,柜组,分区,员工姓名,工号,出勤天数,目标销售额（元）,规则说明",
+    "2026-07,72222201,,陈亚琳,26081021,24,100000,数据权限按柜组控制；唯一值=月份+柜组+员工姓名+工号；工号必须为8位数字",
+    "2026-07,72225101,烟区,唐伟,26081022,23,125000,分区仅柜组72225101和72225104填写；其他柜组留空",
+    "2026-07,72225104,香化A,蒙海晓,26081023,22,68000,出勤天数必填且建议为0-31之间数字"
   ].join("\n");
   downloadCsv("员工-柜组导入模板.csv", csv);
 }
@@ -519,7 +525,6 @@ $("#pageNumbers").addEventListener("click", event => { if (event.target.dataset.
 $("#jumpPage").addEventListener("keydown", event => { if (event.key === "Enter") { currentPage = Number(event.target.value) || 1; render(); } });
 $("#addBtn").addEventListener("click", () => openEditor(null));
 $("#editSelectedBtn").addEventListener("click", () => openEditor(records.find(record => selectedIds.has(record.id))));
-$("#templateBtn").addEventListener("click", downloadTemplate);
 $("#importBtn").addEventListener("click", () => openModal("#importModal"));
 $("#batchDeleteBtn").addEventListener("click", batchDelete);
 $("#saveBtn").addEventListener("click", saveRecord);
@@ -568,7 +573,6 @@ $("#formLines").addEventListener("change", event => {
     const line = event.target.closest("[data-form-line]");
     syncAreaSelect(line);
   }
-  if (event.target.matches('[data-field="employeeId"]')) updateMultiSelect(event.target.closest("[data-multi]"));
 });
 
 $("#formLines").addEventListener("click", event => {
