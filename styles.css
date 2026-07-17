@@ -124,7 +124,7 @@ input[type="checkbox"] { width:18px; height:18px; accent-color:var(--blue); }
 .cloud { font-size:92px; color:#bcc2cc; height:105px; line-height:1; }
 .upload-box p { margin:0; font-size:28px; }
 .upload-box span,.hint a { color:#0b87f8; text-decoration:none; font-weight:500; }
-.checkbox-row { width:720px; margin:0 auto; display:flex; align-items:center; justify-content:flex-start; gap:8px; font-size:22px; color:#565f6d; }
+.checkbox-row { width:720px; margin:0 auto; display:flex; align-items:center; justify-content:center; gap:6px; font-size:22px; color:#565f6d; }
 .import-rules { width:720px; margin:14px auto 8px; padding:12px 16px; border:1px solid #b8d7f5; border-radius:4px; background:#f4f9ff; color:#475467; display:flex; flex-direction:column; gap:6px; font-size:16px; line-height:1.45; }
 .import-rules strong { color:#175cd3; font-weight:600; }
 .hint { text-align:center; margin:4px 0 24px; font-size:22px; color:#565f6d; }
