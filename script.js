@@ -38,6 +38,7 @@ let currentPage = 1;
 let pageSize = 30;
 let editingId = null;
 let pickedFileName = "";
+let multiValueTarget = "employeeId";
 let selectedStoreFilter = { type: "", value: "" };
 let selectedMonthRange = { start: "", end: "" };
 let monthPanelYear = 2026;
@@ -51,7 +52,8 @@ function createRecords() {
     const employee = employees[index % employees.length];
     const group = groups[index % groups.length];
     const month = months[Math.floor(index / 24) % months.length];
-    return { id: `target-${index + 1}`, group, employeeName: employee.name, employeeId: employee.id, month, attendanceDays: 22 + (index % 5), amount: index % 11 === 0 ? 0 : 20000 + (index % 17) * 3500 + Math.floor(index / 8) * 1000, updatedBy: editors[index % editors.length], updatedAt: `2026-07-${String(3 - Math.min(2, Math.floor(index / 36))).padStart(2, "0")} ${String(10 + (index % 7)).padStart(2, "0")}:${String(16 + (index % 40)).padStart(2, "0")}:24` };
+    const area = groupNeedsArea(group) ? splitAreas[Math.floor(index / groups.length) % splitAreas.length] : "";
+    return { id: `target-${index + 1}`, group, area, employeeName: employee.name, employeeId: employee.id, month, attendanceDays: 22 + (index % 5), amount: index % 11 === 0 ? 0 : 20000 + (index % 17) * 3500 + Math.floor(index / 8) * 1000, updatedBy: editors[index % editors.length], updatedAt: `2026-07-${String(3 - Math.min(2, Math.floor(index / 36))).padStart(2, "0")} ${String(10 + (index % 7)).padStart(2, "0")}:${String(16 + (index % 40)).padStart(2, "0")}:24` };
   });
 }
 
@@ -97,12 +99,26 @@ function setStoreFilter(type, value) {
   syncAreaFilter();
 }
 
+function selectedAreaFilters() {
+  return [...document.querySelectorAll('#areaFilter input[type="checkbox"]:checked')].map(input => input.value);
+}
+
+function updateAreaFilterText() {
+  const selected = selectedAreaFilters();
+  const text = $("#areaFilter [data-area-text]");
+  text.textContent = selected.length === splitAreas.length ? "全部分区" : selected.length ? selected.join("、") : "未选择";
+}
+
 function syncAreaFilter() {
-  const select = $("#areaFilter");
+  const filter = $("#areaFilter");
+  const trigger = filter.querySelector("[data-area-trigger]");
+  const menu = filter.querySelector("[data-area-menu]");
   const enabled = selectedStoreFilter.type === "group" && groupNeedsArea(selectedStoreFilter.value);
-  select.disabled = !enabled;
-  select.innerHTML = enabled ? `<option value="">全部分区</option>${optionHtml(splitAreas, item => item, item => item, select.value)}` : `<option value="">-</option>`;
-  if (!enabled) select.value = "";
+  filter.classList.toggle("disabled", !enabled);
+  filter.classList.remove("open");
+  trigger.disabled = !enabled;
+  menu.innerHTML = enabled ? `<div class="area-filter-actions"><button type="button" data-area-all>全选</button><button type="button" data-area-clear>清空</button></div>${splitAreas.map(area => `<label><input type="checkbox" value="${area}" checked /><span>${area}</span></label>`).join("")}` : "";
+  filter.querySelector("[data-area-text]").textContent = enabled ? "全部分区" : "-";
 }
 
 function getFilterGroupCodes() {
@@ -264,18 +280,23 @@ function updateMultiValueCount() {
   $("#multiValueCount").textContent = parseMultiValueText($("#multiValueInput").value).length;
 }
 
-function openEmployeeIdMultiValue() {
-  const values = parseMultiValueText($("#employeeIdFilter").value);
+function openMultiValue(target) {
+  multiValueTarget = target;
+  const config = target === "name" ? { selector: "#nameFilter", title: "编辑员工姓名多值", placeholder: "每行输入一个员工姓名" } : { selector: "#employeeIdFilter", title: "编辑工号多值", placeholder: "每行输入一个8位工号" };
+  const values = parseMultiValueText($(config.selector).value);
+  $("#multiValueModal h2").textContent = config.title;
+  $("#multiValueInput").placeholder = config.placeholder;
   $("#multiValueInput").value = values.join("\n");
   updateMultiValueCount();
   openModal("#multiValueModal");
   $("#multiValueInput").focus();
 }
 
-function confirmEmployeeIdMultiValue() {
+function confirmMultiValue() {
   const values = parseMultiValueText($("#multiValueInput").value);
-  $("#employeeIdFilter").value = values.join("，");
-  closeModals();
+  const targetInput = multiValueTarget === "name" ? $("#nameFilter") : $("#employeeIdFilter");
+  targetInput.value = values.join("，");
+  $("#multiValueModal").hidden = true;
 }
 
 function clearMultiSelect(multi) {
@@ -421,13 +442,13 @@ function syncSelectionState(pageRecords = []) {
 }
 
 function applyFilters() {
-  const storeCodes = getFilterGroupCodes(), area = $("#areaFilter").value, name = $("#nameFilter").value.trim(), employeeIds = parseMultiValueText($("#employeeIdFilter").value), { start: monthStart, end: monthEnd } = selectedMonthRange;
+  const storeCodes = getFilterGroupCodes(), areas = selectedAreaFilters(), areaEnabled = !$("#areaFilter").classList.contains("disabled"), names = parseMultiValueText($("#nameFilter").value), employeeIds = parseMultiValueText($("#employeeIdFilter").value), { start: monthStart, end: monthEnd } = selectedMonthRange;
   const min = Number($("#minAmount").value || 0), max = Number($("#maxAmount").value || Number.MAX_SAFE_INTEGER), keyword = $("#globalSearch").value.trim();
   filteredRecords = records.filter(record => {
     const recordGroup = baseGroup(record.group);
     const teamName = groupToTeam.get(recordGroup) || "";
     const inMonthRange = !monthStart || record.month >= monthStart && record.month <= (monthEnd || monthStart);
-    return (!storeCodes || storeCodes.has(recordGroup)) && (!area || recordArea(record) === area) && (!name || record.employeeName === name) && (!employeeIds.length || employeeIds.some(employeeId => record.employeeId === employeeId)) && inMonthRange && record.amount >= min && record.amount <= max && (!keyword || [groupLabel(record.group), teamName, `[${storeTree.code}]${storeTree.name}`, record.employeeName, record.employeeId, record.month, record.updatedBy].some(value => String(value).includes(keyword)));
+    return (!storeCodes || storeCodes.has(recordGroup)) && (!areaEnabled || areas.includes(recordArea(record))) && (!names.length || names.includes(record.employeeName)) && (!employeeIds.length || employeeIds.some(employeeId => record.employeeId === employeeId)) && inMonthRange && record.amount >= min && record.amount <= max && (!keyword || [groupLabel(record.group), teamName, `[${storeTree.code}]${storeTree.name}`, record.employeeName, record.employeeId, record.month, record.updatedBy].some(value => String(value).includes(keyword)));
   });
   currentPage = 1; selectedIds.clear(); render(); toast(`查询完成，共 ${filteredRecords.length} 条数据`);
 }
@@ -559,9 +580,10 @@ $("#batchDeleteBtn").addEventListener("click", batchDelete);
 $("#saveBtn").addEventListener("click", saveRecord);
 $("#confirmImportBtn").addEventListener("click", simulateImport);
 $("#exportBtn").addEventListener("click", exportCurrentPage);
-$("#pickEmployeeBtn").addEventListener("click", openEmployeeIdMultiValue);
+$("#pickNameBtn").addEventListener("click", () => openMultiValue("name"));
+$("#pickEmployeeBtn").addEventListener("click", () => openMultiValue("employeeId"));
 $("#multiValueInput").addEventListener("input", updateMultiValueCount);
-$("#confirmMultiValueBtn").addEventListener("click", confirmEmployeeIdMultiValue);
+$("#confirmMultiValueBtn").addEventListener("click", confirmMultiValue);
 $("#fullscreenBtn").addEventListener("click", () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.());
 $("#collapseBtn").addEventListener("click", () => { $("#filters").classList.toggle("collapsed"); $("#collapseBtn").textContent = $("#filters").classList.contains("collapsed") ? "⌄" : "⌃"; });
 $("#guidanceToggle").addEventListener("click", () => { $("#guidance").classList.toggle("collapsed"); $("#guidanceToggle span").textContent = $("#guidance").classList.contains("collapsed") ? "点击展开" : "点击收起"; });
@@ -572,6 +594,13 @@ $("#storeFilter").addEventListener("click", event => {
   if (trigger) { event.preventDefault(); event.stopPropagation(); closeMultiSelects(); $("#storeFilter").classList.toggle("open"); }
   if (option) { event.preventDefault(); event.stopPropagation(); setStoreFilter(option.dataset.cascadeType, option.dataset.cascadeValue); }
 });
+$("#areaFilter").addEventListener("click", event => {
+  const trigger = event.target.closest("[data-area-trigger]");
+  if (trigger && !trigger.disabled) { event.preventDefault(); event.stopPropagation(); $("#areaFilter").classList.toggle("open"); }
+  if (event.target.closest("[data-area-all]")) { event.preventDefault(); $("#areaFilter").querySelectorAll('input[type="checkbox"]').forEach(input => input.checked = true); updateAreaFilterText(); }
+  if (event.target.closest("[data-area-clear]")) { event.preventDefault(); $("#areaFilter").querySelectorAll('input[type="checkbox"]').forEach(input => input.checked = false); updateAreaFilterText(); }
+});
+$("#areaFilter").addEventListener("change", updateAreaFilterText);
 $("#storeFilter").addEventListener("mouseover", event => {
   const teamOption = event.target.closest('[data-cascade-type="team"]');
   if (!teamOption) return;
@@ -626,6 +655,7 @@ document.addEventListener("click", event => {
   if (!event.target.closest(".multi-select")) closeMultiSelects();
   if (!event.target.closest("#storeFilter")) closeStoreCascade();
   if (!event.target.closest("#monthFilter")) closeMonthPicker();
+  if (!event.target.closest("#areaFilter")) $("#areaFilter").classList.remove("open");
   if (event.target.matches("[data-close]")) closeModals();
   if (event.target.dataset.edit) { event.preventDefault(); openEditor(records.find(record => record.id === event.target.dataset.edit)); }
   if (event.target.dataset.copy) { event.preventDefault(); openEditor(records.find(record => record.id === event.target.dataset.copy), true); }

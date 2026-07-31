@@ -45,8 +45,18 @@ input,select,.date { height:36px; border:1px solid #d5dee9; background:#fff; bor
 input::placeholder { color:#a4aebc; }
 input:disabled,select:disabled { color:#667085; background:#f5f7fa; cursor:not-allowed; }
 .store-fixed { font-size:14px; }
-label input,label select,label .date,.lookup,.cascade-select,.month-picker { width:100%; flex:1 1 0; min-width:0; }
-.cascade-select { position:relative; }
+label input,label select,label .date,.lookup,.cascade-select,.month-picker,.area-filter { width:100%; flex:1 1 0; min-width:0; }
+.cascade-select,.area-filter { position:relative; }
+.area-filter-trigger { width:100%; height:36px; border:1px solid #d5dee9; border-radius:4px; background:#fff; padding:0 12px 0 14px; display:flex; align-items:center; justify-content:space-between; color:#4c5968; }
+.area-filter-trigger span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.area-filter.disabled .area-filter-trigger { color:#9aa8bb; background:#f5f7fa; cursor:not-allowed; }
+.area-filter-menu { display:none; position:absolute; top:42px; left:0; width:100%; min-width:230px; padding:6px 0; border:1px solid #d5dee9; border-radius:4px; background:#fff; box-shadow:0 8px 20px rgba(16,24,40,.14); z-index:44; }
+.area-filter.open .area-filter-menu { display:block; }
+.area-filter-menu>label { height:34px; padding:0 12px; display:flex; align-items:center; gap:8px; cursor:pointer; }
+.area-filter-menu>label:hover { background:#f4f9ff; }
+.area-filter-menu input[type="checkbox"] { width:16px; height:16px; flex:0 0 auto; }
+.area-filter-actions { height:34px; padding:0 12px; border-bottom:1px solid #edf1f6; display:flex; align-items:center; justify-content:space-between; }
+.area-filter-actions button { color:#1688f0; font-size:14px; }
 .cascade-trigger { width:100%; height:36px; border:1px solid #d5dee9; background:#fff; border-radius:4px; padding:0 12px 0 14px; color:#4c5968; display:flex; align-items:center; justify-content:space-between; }
 .cascade-trigger.placeholder { color:#a4aebc; }
 .cascade-trigger span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }

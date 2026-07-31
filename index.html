@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>员工销售目标维护 - 高保真原型</title>
-  <link rel="stylesheet" href="./styles.css?v=20260731-cascade-width" />
+  <link rel="stylesheet" href="./styles.css?v=20260731-multivalue-filters" />
 </head>
 <body>
   <div class="app">
@@ -31,7 +31,7 @@
       <section class="guidance" id="guidance">
         <button type="button" class="guidance-head" id="guidanceToggle"><strong>筛选项及展示列表说明</strong><span>点击收起</span></button>
         <div class="guidance-body">
-          <section><h3>一、筛选项</h3><p class="guidance-highlight">门店当前仅支持：[7222]中免集团(北京)免税品有限公司；柜组展示为“[编码]柜组名称”。</p><ul><li>柜组：对应门店柜组；分区仅柜组72225101和72225104可选烟区、精品区、酒水区、香化A、香化B，其他柜组置灰。</li><li>员工姓名：精准查询已填写的员工姓名；工号：精准查询已填写的8位员工工号。</li><li>月份：使用月份范围组件；目标销售额支持按区间筛选。</li></ul></section>
+          <section><h3>一、筛选项</h3><p class="guidance-highlight">门店当前仅支持：[7222]中免集团(北京)免税品有限公司；柜组展示为“[编码]柜组名称”。</p><ul><li>柜组：对应门店柜组；分区仅柜组72225101和72225104可选烟区、精品区、酒水区、香化A、香化B，其他柜组置灰。</li><li>员工姓名：支持输入多个已填写的员工姓名并精准查询；工号：支持输入多个8位员工工号并精准查询。</li><li>月份：使用月份范围组件；目标销售额支持按区间筛选。</li></ul></section>
           <section><h3>二、展示列表</h3><p>依次展示柜组、分区、员工姓名、工号、月份、出勤天数、目标销售额（元）；非T3入境指定柜组的分区展示为“-”。</p></section>
         </div>
       </section>
@@ -39,8 +39,8 @@
       <section class="filters" id="filters">
         <div class="filter-grid">
           <label><span>柜组</span><div class="cascade-select" id="storeFilter"><button type="button" class="cascade-trigger placeholder" data-cascade-trigger><span data-cascade-text>请选择柜组</span><b>⌄</b></button><div class="cascade-panel" data-cascade-panel></div></div></label>
-          <label><span>分区</span><select id="areaFilter" disabled><option value="">-</option></select></label>
-          <label><span>员工姓名</span><input id="nameFilter" placeholder="请输入员工姓名" /></label>
+          <label><span>分区</span><div class="area-filter disabled" id="areaFilter"><button type="button" class="area-filter-trigger" data-area-trigger disabled><span data-area-text>-</span><b>⌄</b></button><div class="area-filter-menu" data-area-menu></div></div></label>
+          <label><span>员工姓名</span><div class="lookup"><input id="nameFilter" placeholder="请输入员工姓名" /><button id="pickNameBtn">•••</button></div></label>
           <label><span>工号</span><div class="lookup"><input id="employeeIdFilter" placeholder="请输入8位工号" /><button id="pickEmployeeBtn">•••</button></div></label>
           <label><span>月份</span><div class="month-picker" id="monthFilter"><button type="button" class="month-trigger placeholder" data-month-trigger><span class="calendar-icon">▦</span><span data-month-text>开始日期　-　结束日期</span></button><div class="month-panel" data-month-panel></div></div></label>
           <label class="amount"><span>目标销售额(元)</span><div class="range"><input id="minAmount" type="number" step="0.01" placeholder="请输入" /><em>-</em><input id="maxAmount" type="number" step="0.01" placeholder="请输入" /></div></label>
@@ -121,7 +121,7 @@
   </div>
 
   <div class="toast" id="toast" hidden></div>
-  <script src="./script.js?v=20260731-cascade-width"></script>
+  <script src="./script.js?v=20260731-multivalue-filters"></script>
 </body>
 </html>
 
