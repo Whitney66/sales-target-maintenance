@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>员工销售目标维护 - 高保真原型</title>
-  <link rel="stylesheet" href="./styles.css?v=20260731-guidance" />
+  <link rel="stylesheet" href="./styles.css?v=20260731-cascade-width" />
 </head>
 <body>
   <div class="app">
@@ -38,7 +38,6 @@
 
       <section class="filters" id="filters">
         <div class="filter-grid">
-          <label><span>门店</span><input class="store-fixed" value="[7222]中免集团(北京)免税品有限公司" disabled /></label>
           <label><span>柜组</span><div class="cascade-select" id="storeFilter"><button type="button" class="cascade-trigger placeholder" data-cascade-trigger><span data-cascade-text>请选择柜组</span><b>⌄</b></button><div class="cascade-panel" data-cascade-panel></div></div></label>
           <label><span>分区</span><select id="areaFilter" disabled><option value="">-</option></select></label>
           <label><span>员工姓名</span><input id="nameFilter" placeholder="请输入员工姓名" /></label>
@@ -122,7 +121,7 @@
   </div>
 
   <div class="toast" id="toast" hidden></div>
-  <script src="./script.js?v=20260731-guidance"></script>
+  <script src="./script.js?v=20260731-cascade-width"></script>
 </body>
 </html>
 

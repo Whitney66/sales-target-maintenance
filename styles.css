@@ -70,14 +70,18 @@ label input,label select,label .date,.lookup,.cascade-select,.month-picker { wid
 .month-grid button { color:#4c5968; font-size:16px; border-radius:4px; }
 .month-grid button:hover,.month-grid button.selected { color:#1688f0; font-weight:700; }
 .month-grid button.in-range { color:#1688f0; background:#eef7ff; }
-.cascade-panel { display:none; position:absolute; left:0; top:42px; width:760px; height:292px; border:1px solid #d5dee9; border-radius:4px; background:#fff; box-shadow:0 8px 20px rgba(16,24,40,.14); z-index:40; overflow:hidden; }
+.cascade-panel { display:none; position:absolute; left:0; top:42px; width:min(1080px, calc(100vw - 48px)); height:292px; border:1px solid #d5dee9; border-radius:4px; background:#fff; box-shadow:0 8px 20px rgba(16,24,40,.14); z-index:40; overflow:hidden; }
 .cascade-select.open .cascade-panel { display:flex; }
-.cascade-col { width:252px; height:100%; overflow:auto; padding:8px 0; border-right:1px solid #e5ebf3; }
+.cascade-col { height:100%; overflow:auto; padding:8px 0; border-right:1px solid #e5ebf3; }
+.cascade-col.store-col { flex:0 0 390px; }
+.cascade-col.team-col { flex:0 0 220px; }
+.cascade-col.group-col { flex:1 1 470px; }
 .cascade-col:last-child { border-right:0; }
 .cascade-option { height:34px; display:flex; align-items:center; gap:8px; padding:0 12px; color:#4c5968; cursor:pointer; position:relative; }
 .cascade-option:hover,.cascade-option.hover,.cascade-option.selected { background:#eaf6ff; }
 .cascade-option input { width:16px; height:16px; flex:0 0 auto; accent-color:#1688f0; }
-.cascade-option span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cascade-option span { min-width:0; white-space:nowrap; }
+.store-col .cascade-option span,.group-col .cascade-option span { overflow:visible; text-overflow:clip; }
 .cascade-option em { margin-left:auto; color:#9aa8bb; font-style:normal; }
 .cascade-group-list { display:none; }
 .cascade-group-list.active { display:block; }
