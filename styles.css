@@ -175,9 +175,17 @@ input[type="checkbox"] { width:18px; height:18px; accent-color:var(--blue); }
 .form-field>strong i { margin-right:4px; color:#e5484d; font-style:normal; }
 .form-field small { min-height:46px; color:#8593a6; font-size:13px; line-height:1.45; }
 .employee-combobox { position:relative; width:100%; height:42px; }
-.employee-combobox input { display:block; width:100%; height:42px; margin:0; padding:0 14px; border:1px solid #d5dee9; border-radius:4px; line-height:40px; }
+.employee-combobox input { display:block; width:100%; height:42px; margin:0; padding:0 38px 0 14px; border:1px solid #d5dee9; border-radius:4px; line-height:40px; }
+.employee-combobox>[data-employee-trigger] { position:absolute; top:1px; right:1px; width:36px; height:40px; color:#657386; background:#fff; border-radius:0 4px 4px 0; }
+.employee-combobox.open input { border-color:#1688f0; box-shadow:0 0 0 2px rgba(22,136,240,.1); }
+.employee-options { display:none; position:absolute; top:46px; left:0; right:0; max-height:220px; overflow:auto; padding:5px 0; border:1px solid #d5dee9; border-radius:4px; background:#fff; box-shadow:0 8px 20px rgba(16,24,40,.16); z-index:50; }
+.employee-combobox.open .employee-options { display:block; }
+.employee-options button { display:block; width:100%; min-height:36px; padding:7px 14px; text-align:left; color:#344054; background:#fff; }
+.employee-options button:hover { color:#1688f0; background:#f2f8ff; }
+.employee-options button[hidden] { display:none; }
+.employee-options span { color:#667085; }
 .form-field small b { color:#53657a; }
-.add-row select,.add-row input,.multi-trigger { width:100%; height:42px; font-size:15px; min-width:0; }
+.add-modal .add-row select,.add-modal .add-row input,.add-modal .multi-trigger { width:100%; min-width:0; height:42px !important; min-height:42px; margin:0; padding-top:0; padding-bottom:0; font-size:15px; line-height:40px; }
 .add-row select:disabled { color:#9aa8bb; background:#f1f4f7; }
 .multi-select { position:relative; min-width:0; }
 .multi-trigger { border:1px solid #d5dee9; background:#fff; border-radius:4px; padding:0 12px; display:flex; align-items:center; justify-content:space-between; color:#4c5968; text-align:left; }
