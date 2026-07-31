@@ -333,7 +333,7 @@ function createFormLine(data = {}, canRemove = false) {
   return `<div class="add-row" data-form-line>
     <label class="form-field"><strong><i>*</i>柜组</strong>${createSingleSelect("group", groups, selectedGroup, "请选择柜组", item => item, item => groupLabel(item))}<small><b>校验规则：</b>必填，取门店柜组，展示为“[编码]柜组名称”。</small></label>
     <label class="form-field"><strong>分区</strong><select data-field="area" ${areaEnabled ? "" : "disabled"}><option value="">${areaEnabled ? "请选择分区" : "无需选择分区"}</option>${optionHtml(splitAreas, item => item, item => item, area)}</select><small><b>校验规则：</b>仅柜组72225101和72225104填写，其他柜组展示“-”。</small></label>
-    <label class="form-field"><strong><i>*</i>员工姓名 / 工号</strong><input data-field="employeeText" placeholder="员工姓名 / 8位工号" value="${escapeHtml(employeeText)}" /><small><b>校验规则：</b>必填，格式为“姓名 / 8位工号”。</small></label>
+    <label class="form-field"><strong><i>*</i>员工姓名 / 工号</strong><div class="employee-combobox"><input data-field="employeeText" list="eopEmployeeOptions" autocomplete="off" placeholder="搜索或选择员工" value="${escapeHtml(employeeText)}" /><span>⌄</span></div><small><b>校验规则：</b>必填，单选，取自EOP，展示为“姓名 / 8位工号”。</small></label>
     <label class="form-field"><strong><i>*</i>月份</strong><select data-field="month"><option value="">请选择月份</option>${optionHtml(months, item => item, item => item, month)}</select><small><b>校验规则：</b>必填，格式如2026-07。</small></label>
     <label class="form-field"><strong><i>*</i>出勤天数</strong><input data-field="attendanceDays" type="number" min="0" max="31" step="0.01" placeholder="请输入出勤天数" value="${escapeHtml(attendanceDays)}" /><small><b>校验规则：</b>必填，0-31，最多两位小数。</small></label>
     <label class="form-field"><strong>目标销售额（元）</strong><input data-field="amount" type="number" min="0" step="0.01" placeholder="请输入目标销售额" value="${escapeHtml(amount)}" /><small><b>校验规则：</b>选填，非负数，最多两位小数。</small></label>
@@ -362,15 +362,18 @@ function readFormLines() {
     const amountText = line.querySelector('[data-field="amount"]').value.trim();
     const amount = Number(amountText);
     if (!selectedGroup) errors.push(`${prefix}请选择柜组`);
-    if (!employeeEntries.length) errors.push(`${prefix}请输入员工信息`);
+    if (!employeeEntries.length) errors.push(`${prefix}请选择员工`);
+    if (employeeEntries.length > 1) errors.push(`${prefix}员工仅支持单选`);
     if (!month) errors.push(`${prefix}请选择月份`);
     if (!attendanceText) errors.push(`${prefix}请输入出勤天数`);
     if (attendanceText && (Number.isNaN(attendanceDays) || attendanceDays < 0 || attendanceDays > 31 || !hasAtMostTwoDecimals(attendanceText))) errors.push(`${prefix}出勤天数需为0-31之间且最多保留两位小数`);
     if (amountText && (Number.isNaN(amount) || amount < 0 || !hasAtMostTwoDecimals(amountText))) errors.push(`${prefix}目标销售额需为非负数且最多保留两位小数`);
     if (errors.length) return;
     employeeEntries.forEach(entry => {
-      if (entry.raw) errors.push(`${prefix}员工信息需按“姓名 / 工号”格式输入`);
+      const eopEmployee = !entry.raw && employees.find(employee => employee.name === entry.employeeName && employee.id === entry.employeeId);
+      if (entry.raw) errors.push(`${prefix}请选择EOP员工，格式为“姓名 / 工号”`);
       else if (!isEightDigitEmployeeId(entry.employeeId)) errors.push(`${prefix}${entry.employeeName}的工号必须为8位数字`);
+      else if (!eopEmployee) errors.push(`${prefix}${entry.employeeName} / ${entry.employeeId}不在EOP员工范围内`);
       else rows.push({ group: selectedGroup, employeeName: entry.employeeName, employeeId: entry.employeeId, month, area, attendanceDays, amount });
     });
   });
