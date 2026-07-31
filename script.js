@@ -39,7 +39,8 @@ let pageSize = 30;
 let editingId = null;
 let pickedFileName = "";
 let multiValueTarget = "employeeId";
-let selectedStoreFilter = { type: "", value: "" };
+let selectedGroupFilters = new Set();
+let activeCascadeTeam = storeTree.teams[0].name;
 let selectedMonthRange = { start: "", end: "" };
 let monthPanelYear = 2026;
 
@@ -76,25 +77,30 @@ function fillOptions() {
 }
 
 function storeFilterLabel() {
-  if (!selectedStoreFilter.value) return "请选择柜组";
-  if (selectedStoreFilter.type === "group") return groupLabel(selectedStoreFilter.value);
-  return selectedStoreFilter.type === "store" ? `[${storeTree.code}]${storeTree.name}` : selectedStoreFilter.value;
+  const selected = [...selectedGroupFilters];
+  if (!selected.length) return "请选择柜组";
+  if (selected.length === groups.length) return `[${storeTree.code}]${storeTree.name}（全部柜组）`;
+  if (selected.length === 1) return groupLabel(selected[0]);
+  return `${selected.slice(0, 2).map(groupLabel).join("、")} 等${selected.length}项`;
 }
 
 function renderStoreCascade() {
   const panel = $("#storeFilter [data-cascade-panel]");
-  const selectedTeam = selectedStoreFilter.type === "group" ? groupToTeam.get(selectedStoreFilter.value) : selectedStoreFilter.type === "team" ? selectedStoreFilter.value : "";
-  const selectedGroups = selectedStoreFilter.type === "store" ? new Set(groups) : selectedStoreFilter.type === "team" ? new Set(storeTree.teams.find(team => team.name === selectedStoreFilter.value)?.groups || []) : selectedStoreFilter.type === "group" ? new Set([selectedStoreFilter.value]) : new Set();
-  panel.innerHTML = `<div class="cascade-col store-col"><label class="cascade-option ${selectedStoreFilter.type === "store" ? "selected" : ""}" data-cascade-type="store" data-cascade-value="${storeTree.code}"><input type="checkbox" ${selectedStoreFilter.type === "store" ? "checked" : ""} /> <span>[${storeTree.code}]${escapeHtml(storeTree.name)}</span></label></div>
-    <div class="cascade-col team-col">${storeTree.teams.map(team => `<label class="cascade-option ${selectedTeam === team.name ? "selected" : ""}" data-cascade-type="team" data-cascade-value="${escapeHtml(team.name)}"><input type="checkbox" ${selectedStoreFilter.type === "team" && selectedStoreFilter.value === team.name ? "checked" : ""} /> <span>${escapeHtml(team.name)}</span><em>›</em></label>`).join("")}</div>
-    <div class="cascade-col group-col">${storeTree.teams.map(team => `<div class="cascade-group-list ${selectedTeam === team.name || !selectedTeam ? "active" : ""}" data-team="${escapeHtml(team.name)}">${team.groups.map(group => `<label class="cascade-option" data-cascade-type="group" data-cascade-value="${group}"><input type="checkbox" ${selectedGroups.has(group) ? "checked" : ""} /> <span>${escapeHtml(groupLabel(group))}</span></label>`).join("")}</div>`).join("")}</div>`;
+  const allSelected = groups.every(group => selectedGroupFilters.has(group));
+  panel.innerHTML = `<div class="cascade-col store-col"><label class="cascade-option ${allSelected ? "selected" : ""}" data-cascade-type="store" data-cascade-value="${storeTree.code}"><input type="checkbox" ${allSelected ? "checked" : ""} /> <span>[${storeTree.code}]${escapeHtml(storeTree.name)}</span></label></div>
+    <div class="cascade-col team-col">${storeTree.teams.map(team => { const teamSelected = team.groups.every(group => selectedGroupFilters.has(group)); return `<label class="cascade-option ${activeCascadeTeam === team.name ? "selected" : ""}" data-cascade-type="team" data-cascade-value="${escapeHtml(team.name)}"><input type="checkbox" ${teamSelected ? "checked" : ""} /> <span>${escapeHtml(team.name)}</span><em>›</em></label>`; }).join("")}</div>
+    <div class="cascade-col group-col">${storeTree.teams.map(team => `<div class="cascade-group-list ${activeCascadeTeam === team.name ? "active" : ""}" data-team="${escapeHtml(team.name)}">${team.groups.map(group => `<label class="cascade-option" data-cascade-type="group" data-cascade-value="${group}"><input type="checkbox" ${selectedGroupFilters.has(group) ? "checked" : ""} /> <span>${escapeHtml(groupLabel(group))}</span></label>`).join("")}</div>`).join("")}</div>`;
   const trigger = $("#storeFilter [data-cascade-trigger]");
   $("#storeFilter [data-cascade-text]").textContent = storeFilterLabel();
-  trigger.classList.toggle("placeholder", !selectedStoreFilter.value);
+  trigger.classList.toggle("placeholder", !selectedGroupFilters.size);
 }
 
 function setStoreFilter(type, value) {
-  selectedStoreFilter = selectedStoreFilter.type === type && selectedStoreFilter.value === value ? { type: "", value: "" } : { type, value };
+  const targetGroups = type === "store" ? groups : type === "team" ? storeTree.teams.find(team => team.name === value)?.groups || [] : [value];
+  const shouldSelect = targetGroups.some(group => !selectedGroupFilters.has(group));
+  targetGroups.forEach(group => shouldSelect ? selectedGroupFilters.add(group) : selectedGroupFilters.delete(group));
+  if (type === "team") activeCascadeTeam = value;
+  if (type === "group") activeCascadeTeam = groupToTeam.get(value) || activeCascadeTeam;
   renderStoreCascade();
   syncAreaFilter();
 }
@@ -113,7 +119,7 @@ function syncAreaFilter() {
   const filter = $("#areaFilter");
   const trigger = filter.querySelector("[data-area-trigger]");
   const menu = filter.querySelector("[data-area-menu]");
-  const enabled = selectedStoreFilter.type === "group" && groupNeedsArea(selectedStoreFilter.value);
+  const enabled = selectedGroupFilters.size > 0 && [...selectedGroupFilters].every(groupNeedsArea);
   filter.classList.toggle("disabled", !enabled);
   filter.classList.remove("open");
   trigger.disabled = !enabled;
@@ -122,11 +128,7 @@ function syncAreaFilter() {
 }
 
 function getFilterGroupCodes() {
-  if (!selectedStoreFilter.value) return null;
-  if (selectedStoreFilter.type === "store") return new Set(groups);
-  if (selectedStoreFilter.type === "team") return new Set(storeTree.teams.find(team => team.name === selectedStoreFilter.value)?.groups || []);
-  if (selectedStoreFilter.type === "group") return new Set([selectedStoreFilter.value]);
-  return null;
+  return selectedGroupFilters.size ? new Set(selectedGroupFilters) : null;
 }
 
 function monthLabel(value) {
@@ -454,7 +456,8 @@ function applyFilters() {
 }
 
 function resetFilters() {
-  selectedStoreFilter = { type: "", value: "" };
+  selectedGroupFilters.clear();
+  activeCascadeTeam = storeTree.teams[0].name;
   selectedMonthRange = { start: "", end: "" };
   renderStoreCascade();
   syncAreaFilter();
@@ -604,7 +607,8 @@ $("#areaFilter").addEventListener("change", updateAreaFilterText);
 $("#storeFilter").addEventListener("mouseover", event => {
   const teamOption = event.target.closest('[data-cascade-type="team"]');
   if (!teamOption) return;
-  document.querySelectorAll(".cascade-group-list").forEach(list => list.classList.toggle("active", list.dataset.team === teamOption.dataset.cascadeValue));
+  activeCascadeTeam = teamOption.dataset.cascadeValue;
+  document.querySelectorAll(".cascade-group-list").forEach(list => list.classList.toggle("active", list.dataset.team === activeCascadeTeam));
   document.querySelectorAll(".team-col .cascade-option").forEach(option => option.classList.toggle("hover", option === teamOption));
 });
 $("#monthFilter").addEventListener("click", event => {
