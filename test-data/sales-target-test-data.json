@@ -2,7 +2,7 @@
   {
     "teamId": "T202607001",
     "teamName": "T3香化",
-    "group": "72222201",
+    "group": "[72222201]T3E14香化",
     "employeeName": "陈亚琳",
     "employeeId": "26081021",
     "month": "2026-07",
@@ -10,12 +10,13 @@
     "updatedBy": "蒙海晓",
     "updatedAt": "2026-07-03 10:16:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 22
+    "attendanceDays": 22,
+    "area": "-"
   },
   {
     "teamId": "T202607002",
     "teamName": "T3香化",
-    "group": "72222401",
+    "group": "[72222401]T3E18香化",
     "employeeName": "唐伟",
     "employeeId": "26081022",
     "month": "2026-07",
@@ -23,12 +24,13 @@
     "updatedBy": "唐伟",
     "updatedAt": "2026-07-03 11:17:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 23
+    "attendanceDays": 23,
+    "area": "-"
   },
   {
     "teamId": "T202607003",
     "teamName": "T3香化",
-    "group": "72221301",
+    "group": "[72221301]T3E03",
     "employeeName": "蒙海晓",
     "employeeId": "26081023",
     "month": "2026-07",
@@ -36,12 +38,13 @@
     "updatedBy": "陈亚琳",
     "updatedAt": "2026-07-03 12:18:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 24
+    "attendanceDays": 24,
+    "area": "-"
   },
   {
     "teamId": "T202607004",
     "teamName": "T3香化",
-    "group": "72222501",
+    "group": "[72222501]T3E19",
     "employeeName": "胡巧菊",
     "employeeId": "26081024",
     "month": "2026-07",
@@ -49,12 +52,13 @@
     "updatedBy": "胡巧菊",
     "updatedAt": "2026-07-03 13:19:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 25
+    "attendanceDays": 25,
+    "area": "-"
   },
   {
     "teamId": "T202607005",
     "teamName": "T3烟酒",
-    "group": "72221201",
+    "group": "[72221201]T3E02烟酒",
     "employeeName": "王一诺",
     "employeeId": "26081025",
     "month": "2026-07",
@@ -62,12 +66,13 @@
     "updatedBy": "蒙海晓",
     "updatedAt": "2026-07-03 14:20:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 26
+    "attendanceDays": 26,
+    "area": "-"
   },
   {
     "teamId": "T202607006",
     "teamName": "T3烟酒",
-    "group": "72221501",
+    "group": "[72221501]T3E07",
     "employeeName": "赵敏",
     "employeeId": "26081026",
     "month": "2026-07",
@@ -75,12 +80,13 @@
     "updatedBy": "唐伟",
     "updatedAt": "2026-07-03 15:21:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 22
+    "attendanceDays": 22,
+    "area": "-"
   },
   {
     "teamId": "T202607007",
     "teamName": "T3烟酒",
-    "group": "72222301",
+    "group": "[72222301]T3E15",
     "employeeName": "李明",
     "employeeId": "26081027",
     "month": "2026-07",
@@ -88,12 +94,13 @@
     "updatedBy": "陈亚琳",
     "updatedAt": "2026-07-03 16:22:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 23
+    "attendanceDays": 23,
+    "area": "-"
   },
   {
     "teamId": "T202607008",
     "teamName": "T3烟酒",
-    "group": "72222901",
+    "group": "[72222901]T3E23",
     "employeeName": "刘佳",
     "employeeId": "26081028",
     "month": "2026-07",
@@ -101,12 +108,13 @@
     "updatedBy": "胡巧菊",
     "updatedAt": "2026-07-03 17:23:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 24
+    "attendanceDays": 24,
+    "area": "-"
   },
   {
     "teamId": "T202607009",
     "teamName": "T3精品专卖",
-    "group": "72221601",
+    "group": "[72221601]T3E0801精品Chloe",
     "employeeName": "周晴",
     "employeeId": "26081029",
     "month": "2026-07",
@@ -114,12 +122,13 @@
     "updatedBy": "蒙海晓",
     "updatedAt": "2026-07-03 10:24:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 25
+    "attendanceDays": 25,
+    "area": "-"
   },
   {
     "teamId": "T202607010",
     "teamName": "T3精品专卖",
-    "group": "72221602",
+    "group": "[72221602]T3E0802精品Kenzo",
     "employeeName": "吴越",
     "employeeId": "26081030",
     "month": "2026-07",
@@ -127,12 +136,13 @@
     "updatedBy": "唐伟",
     "updatedAt": "2026-07-03 11:25:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 26
+    "attendanceDays": 26,
+    "area": "-"
   },
   {
     "teamId": "T202607011",
     "teamName": "T3精品专卖",
-    "group": "72221603",
+    "group": "[72221603]T3E0803精品MCM",
     "employeeName": "孙晨",
     "employeeId": "26081031",
     "month": "2026-06",
@@ -140,12 +150,13 @@
     "updatedBy": "陈亚琳",
     "updatedAt": "2026-07-03 12:26:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 22
+    "attendanceDays": 22,
+    "area": "-"
   },
   {
     "teamId": "T202607012",
     "teamName": "T3精品专卖",
-    "group": "72221604",
+    "group": "[72221604]T3E0804精品Coach",
     "employeeName": "黄静",
     "employeeId": "26081032",
     "month": "2026-06",
@@ -153,12 +164,13 @@
     "updatedBy": "胡巧菊",
     "updatedAt": "2026-07-03 13:27:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 23
+    "attendanceDays": 23,
+    "area": "-"
   },
   {
     "teamId": "T202607013",
     "teamName": "T3精品专卖",
-    "group": "72221605",
+    "group": "[72221605]T3E0805精品TB",
     "employeeName": "陈亚琳",
     "employeeId": "26081021",
     "month": "2026-06",
@@ -166,12 +178,13 @@
     "updatedBy": "蒙海晓",
     "updatedAt": "2026-07-03 14:28:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 24
+    "attendanceDays": 24,
+    "area": "-"
   },
   {
     "teamId": "T202607014",
     "teamName": "T3精品专卖",
-    "group": "72221607",
+    "group": "[72221607]T3E0807精品Fashion",
     "employeeName": "唐伟",
     "employeeId": "26081022",
     "month": "2026-06",
@@ -179,12 +192,13 @@
     "updatedBy": "唐伟",
     "updatedAt": "2026-07-03 15:29:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 25
+    "attendanceDays": 25,
+    "area": "-"
   },
   {
     "teamId": "T202607015",
     "teamName": "T3精品专卖",
-    "group": "72221801",
+    "group": "[72221801]T3E1001精品",
     "employeeName": "蒙海晓",
     "employeeId": "26081023",
     "month": "2026-06",
@@ -192,12 +206,13 @@
     "updatedBy": "陈亚琳",
     "updatedAt": "2026-07-02 16:30:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 26
+    "attendanceDays": 26,
+    "area": "-"
   },
   {
     "teamId": "T202607016",
     "teamName": "T3精品专卖",
-    "group": "72221704",
+    "group": "[72221704]T3E0904精品",
     "employeeName": "胡巧菊",
     "employeeId": "26081024",
     "month": "2026-06",
@@ -205,12 +220,13 @@
     "updatedBy": "胡巧菊",
     "updatedAt": "2026-07-02 17:31:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 22
+    "attendanceDays": 22,
+    "area": "-"
   },
   {
     "teamId": "T202607017",
     "teamName": "T3精品专卖",
-    "group": "72222801",
+    "group": "[72222801]T3E2201精品BV",
     "employeeName": "王一诺",
     "employeeId": "26081025",
     "month": "2026-06",
@@ -218,12 +234,13 @@
     "updatedBy": "蒙海晓",
     "updatedAt": "2026-07-02 10:32:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 23
+    "attendanceDays": 23,
+    "area": "-"
   },
   {
     "teamId": "T202607018",
     "teamName": "T3精品专卖",
-    "group": "72222802",
+    "group": "[72222802]T3E2202精品YSL",
     "employeeName": "赵敏",
     "employeeId": "26081026",
     "month": "2026-06",
@@ -231,12 +248,13 @@
     "updatedBy": "唐伟",
     "updatedAt": "2026-07-02 11:33:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 24
+    "attendanceDays": 24,
+    "area": "-"
   },
   {
     "teamId": "T202607019",
     "teamName": "T3精品专卖",
-    "group": "72222803",
+    "group": "[72222803]巴黎世家",
     "employeeName": "李明",
     "employeeId": "26081027",
     "month": "2026-06",
@@ -244,12 +262,13 @@
     "updatedBy": "陈亚琳",
     "updatedAt": "2026-07-02 12:34:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 25
+    "attendanceDays": 25,
+    "area": "-"
   },
   {
     "teamId": "T202607020",
     "teamName": "T3精品专卖",
-    "group": "72222804",
+    "group": "[72222804]T3E2204精品Burberry",
     "employeeName": "刘佳",
     "employeeId": "26081028",
     "month": "2026-06",
@@ -257,12 +276,13 @@
     "updatedBy": "胡巧菊",
     "updatedAt": "2026-07-02 13:35:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 26
+    "attendanceDays": 26,
+    "area": "-"
   },
   {
     "teamId": "T202607021",
     "teamName": "T3精品专卖",
-    "group": "72222805",
+    "group": "[72222805]T3E2205精品Moncler",
     "employeeName": "周晴",
     "employeeId": "26081029",
     "month": "2026-05",
@@ -270,12 +290,13 @@
     "updatedBy": "蒙海晓",
     "updatedAt": "2026-07-02 14:36:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 22
+    "attendanceDays": 22,
+    "area": "-"
   },
   {
     "teamId": "T202607022",
     "teamName": "T3精品专卖",
-    "group": "72222806",
+    "group": "[72222806]T3E2206精品Ferragamo",
     "employeeName": "吴越",
     "employeeId": "26081030",
     "month": "2026-05",
@@ -283,12 +304,13 @@
     "updatedBy": "唐伟",
     "updatedAt": "2026-07-02 15:37:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 23
+    "attendanceDays": 23,
+    "area": "-"
   },
   {
     "teamId": "T202607023",
     "teamName": "T3精品综合",
-    "group": "72221401",
+    "group": "[72221401]T3E05精品太阳镜",
     "employeeName": "孙晨",
     "employeeId": "26081031",
     "month": "2026-05",
@@ -296,12 +318,13 @@
     "updatedBy": "陈亚琳",
     "updatedAt": "2026-07-02 16:38:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 24
+    "attendanceDays": 24,
+    "area": "-"
   },
   {
     "teamId": "T202607024",
     "teamName": "T3精品综合",
-    "group": "72221606",
+    "group": "[72221606]T3E0806精品Montblanc",
     "employeeName": "黄静",
     "employeeId": "26081032",
     "month": "2026-05",
@@ -309,12 +332,13 @@
     "updatedBy": "胡巧菊",
     "updatedAt": "2026-07-02 17:39:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 25
+    "attendanceDays": 25,
+    "area": "-"
   },
   {
     "teamId": "T202607025",
     "teamName": "T3精品综合",
-    "group": "72221701",
+    "group": "[72221701]T3E0901精品",
     "employeeName": "陈亚琳",
     "employeeId": "26081021",
     "month": "2026-05",
@@ -322,12 +346,13 @@
     "updatedBy": "蒙海晓",
     "updatedAt": "2026-07-02 10:40:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 26
+    "attendanceDays": 26,
+    "area": "-"
   },
   {
     "teamId": "T202607026",
     "teamName": "T3精品综合",
-    "group": "72221702",
+    "group": "[72221702]T3E0902精品",
     "employeeName": "唐伟",
     "employeeId": "26081022",
     "month": "2026-05",
@@ -335,12 +360,13 @@
     "updatedBy": "唐伟",
     "updatedAt": "2026-07-02 11:41:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 22
+    "attendanceDays": 22,
+    "area": "-"
   },
   {
     "teamId": "T202607027",
     "teamName": "T3精品综合",
-    "group": "72221802",
+    "group": "[72221802]T3E1002精品",
     "employeeName": "蒙海晓",
     "employeeId": "26081023",
     "month": "2026-05",
@@ -348,12 +374,13 @@
     "updatedBy": "陈亚琳",
     "updatedAt": "2026-07-02 12:42:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 23
+    "attendanceDays": 23,
+    "area": "-"
   },
   {
     "teamId": "T202607028",
     "teamName": "T3精品综合",
-    "group": "72221901",
+    "group": "[72221901]T3E1101精品TUMI",
     "employeeName": "胡巧菊",
     "employeeId": "26081024",
     "month": "2026-05",
@@ -361,12 +388,13 @@
     "updatedBy": "胡巧菊",
     "updatedAt": "2026-07-02 13:43:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 24
+    "attendanceDays": 24,
+    "area": "-"
   },
   {
     "teamId": "T202607029",
     "teamName": "T3精品综合",
-    "group": "72221902",
+    "group": "[72221902]T3E1102",
     "employeeName": "王一诺",
     "employeeId": "26081025",
     "month": "2026-05",
@@ -374,12 +402,13 @@
     "updatedBy": "蒙海晓",
     "updatedAt": "2026-07-01 14:44:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 25
+    "attendanceDays": 25,
+    "area": "-"
   },
   {
     "teamId": "T202607030",
     "teamName": "T3精品综合",
-    "group": "72222601",
+    "group": "[72222601]T3E2001精品Chopard",
     "employeeName": "赵敏",
     "employeeId": "26081026",
     "month": "2026-05",
@@ -387,12 +416,13 @@
     "updatedBy": "唐伟",
     "updatedAt": "2026-07-01 15:45:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 26
+    "attendanceDays": 26,
+    "area": "-"
   },
   {
     "teamId": "T202607031",
     "teamName": "T3精品综合",
-    "group": "72222602",
+    "group": "[72222602]T3E2002精品Bvlgari",
     "employeeName": "李明",
     "employeeId": "26081027",
     "month": "2026-04",
@@ -400,12 +430,13 @@
     "updatedBy": "陈亚琳",
     "updatedAt": "2026-07-01 16:46:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 22
+    "attendanceDays": 22,
+    "area": "-"
   },
   {
     "teamId": "T202607032",
     "teamName": "T3精品综合",
-    "group": "72222603",
+    "group": "[72222603]T3E2003精品Qeelin",
     "employeeName": "刘佳",
     "employeeId": "26081028",
     "month": "2026-04",
@@ -413,12 +444,13 @@
     "updatedBy": "胡巧菊",
     "updatedAt": "2026-07-01 17:47:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 23
+    "attendanceDays": 23,
+    "area": "-"
   },
   {
     "teamId": "T202607033",
     "teamName": "T3精品综合",
-    "group": "72222604",
+    "group": "[72222604]T3E2004精品Omega",
     "employeeName": "周晴",
     "employeeId": "26081029",
     "month": "2026-04",
@@ -426,12 +458,13 @@
     "updatedBy": "蒙海晓",
     "updatedAt": "2026-07-01 10:48:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 24
+    "attendanceDays": 24,
+    "area": "-"
   },
   {
     "teamId": "T202607034",
     "teamName": "T3精品综合",
-    "group": "72222701",
+    "group": "[72222701]T3E2101",
     "employeeName": "吴越",
     "employeeId": "26081030",
     "month": "2026-04",
@@ -439,12 +472,13 @@
     "updatedBy": "唐伟",
     "updatedAt": "2026-07-01 11:49:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 25
+    "attendanceDays": 25,
+    "area": "-"
   },
   {
     "teamId": "T202607035",
     "teamName": "T3精品综合",
-    "group": "72222702",
+    "group": "[72222702]T3E2102",
     "employeeName": "孙晨",
     "employeeId": "26081031",
     "month": "2026-04",
@@ -452,12 +486,13 @@
     "updatedBy": "陈亚琳",
     "updatedAt": "2026-07-01 12:50:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 26
+    "attendanceDays": 26,
+    "area": "-"
   },
   {
     "teamId": "T202607036",
     "teamName": "T3精品综合",
-    "group": "72223001",
+    "group": "[72223001]T3E24",
     "employeeName": "黄静",
     "employeeId": "26081032",
     "month": "2026-04",
@@ -465,12 +500,13 @@
     "updatedBy": "胡巧菊",
     "updatedAt": "2026-07-01 13:51:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 22
+    "attendanceDays": 22,
+    "area": "-"
   },
   {
     "teamId": "T202607037",
     "teamName": "T3入境",
-    "group": "72225101",
+    "group": "[72225101]T3CI1",
     "employeeName": "陈亚琳",
     "employeeId": "26081021",
     "month": "2026-04",
@@ -478,12 +514,13 @@
     "updatedBy": "蒙海晓",
     "updatedAt": "2026-07-01 14:52:24",
     "scenario": "特殊柜组：按烟区/精品区/酒水区/【香化A】/【香化B】平均拆分目标",
-    "attendanceDays": 23
+    "attendanceDays": 23,
+    "area": "精品区"
   },
   {
     "teamId": "T202607038",
     "teamName": "T3入境",
-    "group": "72225102",
+    "group": "[72225102]T3CI2",
     "employeeName": "唐伟",
     "employeeId": "26081022",
     "month": "2026-04",
@@ -491,12 +528,13 @@
     "updatedBy": "唐伟",
     "updatedAt": "2026-07-01 15:53:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 24
+    "attendanceDays": 24,
+    "area": "-"
   },
   {
     "teamId": "T202607039",
     "teamName": "T3入境",
-    "group": "72225103",
+    "group": "[72225103]T3CI3",
     "employeeName": "蒙海晓",
     "employeeId": "26081023",
     "month": "2026-04",
@@ -504,12 +542,13 @@
     "updatedBy": "陈亚琳",
     "updatedAt": "2026-07-01 16:54:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 25
+    "attendanceDays": 25,
+    "area": "-"
   },
   {
     "teamId": "T202607040",
     "teamName": "T3入境",
-    "group": "72225104",
+    "group": "[72225104]T3CI4",
     "employeeName": "胡巧菊",
     "employeeId": "26081024",
     "month": "2026-04",
@@ -517,6 +556,7 @@
     "updatedBy": "胡巧菊",
     "updatedAt": "2026-07-01 17:55:24",
     "scenario": "真实8位柜组",
-    "attendanceDays": 26
+    "attendanceDays": 26,
+    "area": "香化B"
   }
 ]

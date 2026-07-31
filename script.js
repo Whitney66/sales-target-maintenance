@@ -1,6 +1,6 @@
 const storeTree = {
   code: "7222",
-  name: "首都T3门店",
+  name: "中免集团(北京)免税品有限公司",
   manager: "李晓楠",
   teams: [
     { name: "T3香化", groups: ["72222201", "72222401", "72221301", "72222501"] },
@@ -11,6 +11,15 @@ const storeTree = {
   ]
 };
 const groups = storeTree.teams.flatMap(team => team.groups);
+const groupNames = {
+  "72225101":"T3CI1", "72225102":"T3CI2", "72225103":"T3CI3", "72225104":"T3CI4",
+  "72222201":"T3E14香化", "72222401":"T3E18香化", "72221301":"T3E03", "72222501":"T3E19",
+  "72221201":"T3E02烟酒", "72221501":"T3E07", "72222301":"T3E15", "72222901":"T3E23",
+  "72221601":"T3E0801精品Chloe", "72221602":"T3E0802精品Kenzo", "72221603":"T3E0803精品MCM", "72221604":"T3E0804精品Coach", "72221605":"T3E0805精品TB", "72221607":"T3E0807精品Fashion",
+  "72221801":"T3E1001精品", "72221704":"T3E0904精品", "72222801":"T3E2201精品BV", "72222802":"T3E2202精品YSL", "72222803":"巴黎世家", "72222804":"T3E2204精品Burberry", "72222805":"T3E2205精品Moncler", "72222806":"T3E2206精品Ferragamo",
+  "72221401":"T3E05精品太阳镜", "72221606":"T3E0806精品Montblanc", "72221701":"T3E0901精品", "72221702":"T3E0902精品", "72221802":"T3E1002精品", "72221901":"T3E1101精品TUMI", "72221902":"T3E1102",
+  "72222601":"T3E2001精品Chopard", "72222602":"T3E2002精品Bvlgari", "72222603":"T3E2003精品Qeelin", "72222604":"T3E2004精品Omega", "72222701":"T3E2101", "72222702":"T3E2102", "72223001":"T3E24"
+};
 const groupToTeam = new Map(storeTree.teams.flatMap(team => team.groups.map(group => [group, team.name])));
 const splitGroupCodes = new Set(["72225101", "72225104"]);
 const splitAreas = ["烟区", "精品区", "酒水区", "香化A", "香化B"];
@@ -51,18 +60,23 @@ function escapeHtml(value = "") { return String(value).replace(/[&<>"']/g, char 
 function optionHtml(items, getValue, getLabel, selected) { return items.map(item => `<option value="${escapeHtml(getValue(item))}" ${getValue(item) === selected ? "selected" : ""}>${escapeHtml(getLabel(item))}</option>`).join(""); }
 function baseGroup(value = "") { return String(value).split("-")[0]; }
 function groupNeedsArea(group) { return splitGroupCodes.has(baseGroup(group)); }
-function recordUniqueKey(record) { return [record.month, baseGroup(record.group), record.employeeName, record.employeeId].join("|"); }
+function groupLabel(group) { const code = baseGroup(group); return `[${code}]${groupNames[code] || ""}`; }
+function recordArea(record = {}) { return record.area || (String(record.group || "").includes("-") ? String(record.group).split("-").slice(1).join("-") : ""); }
+function recordUniqueKey(record) { return [baseGroup(record.group), record.employeeId, record.month].join("|"); }
 function isEightDigitEmployeeId(value) { return /^\d{8}$/.test(String(value || "")); }
+function hasAtMostTwoDecimals(value) { return /^\d+(\.\d{1,2})?$/.test(String(value || "")); }
 function alertDuplicate(message) { alert(message); }
 
 function fillOptions() {
   renderStoreCascade();
+  syncAreaFilter();
   renderMonthPicker();
 }
 
 function storeFilterLabel() {
-  if (!selectedStoreFilter.value) return "请选择门店/团队/柜组";
-  return selectedStoreFilter.value;
+  if (!selectedStoreFilter.value) return "请选择柜组";
+  if (selectedStoreFilter.type === "group") return groupLabel(selectedStoreFilter.value);
+  return selectedStoreFilter.type === "store" ? `[${storeTree.code}]${storeTree.name}` : selectedStoreFilter.value;
 }
 
 function renderStoreCascade() {
@@ -71,7 +85,7 @@ function renderStoreCascade() {
   const selectedGroups = selectedStoreFilter.type === "store" ? new Set(groups) : selectedStoreFilter.type === "team" ? new Set(storeTree.teams.find(team => team.name === selectedStoreFilter.value)?.groups || []) : selectedStoreFilter.type === "group" ? new Set([selectedStoreFilter.value]) : new Set();
   panel.innerHTML = `<div class="cascade-col store-col"><label class="cascade-option ${selectedStoreFilter.type === "store" ? "selected" : ""}" data-cascade-type="store" data-cascade-value="${storeTree.code}"><input type="checkbox" ${selectedStoreFilter.type === "store" ? "checked" : ""} /> <span>${storeTree.code}</span></label></div>
     <div class="cascade-col team-col">${storeTree.teams.map(team => `<label class="cascade-option ${selectedTeam === team.name ? "selected" : ""}" data-cascade-type="team" data-cascade-value="${escapeHtml(team.name)}"><input type="checkbox" ${selectedStoreFilter.type === "team" && selectedStoreFilter.value === team.name ? "checked" : ""} /> <span>${escapeHtml(team.name)}</span><em>›</em></label>`).join("")}</div>
-    <div class="cascade-col group-col">${storeTree.teams.map(team => `<div class="cascade-group-list ${selectedTeam === team.name || !selectedTeam ? "active" : ""}" data-team="${escapeHtml(team.name)}">${team.groups.map(group => `<label class="cascade-option" data-cascade-type="group" data-cascade-value="${group}"><input type="checkbox" ${selectedGroups.has(group) ? "checked" : ""} /> <span>${group}</span></label>`).join("")}</div>`).join("")}</div>`;
+    <div class="cascade-col group-col">${storeTree.teams.map(team => `<div class="cascade-group-list ${selectedTeam === team.name || !selectedTeam ? "active" : ""}" data-team="${escapeHtml(team.name)}">${team.groups.map(group => `<label class="cascade-option" data-cascade-type="group" data-cascade-value="${group}"><input type="checkbox" ${selectedGroups.has(group) ? "checked" : ""} /> <span>${escapeHtml(groupLabel(group))}</span></label>`).join("")}</div>`).join("")}</div>`;
   const trigger = $("#storeFilter [data-cascade-trigger]");
   $("#storeFilter [data-cascade-text]").textContent = storeFilterLabel();
   trigger.classList.toggle("placeholder", !selectedStoreFilter.value);
@@ -80,6 +94,15 @@ function renderStoreCascade() {
 function setStoreFilter(type, value) {
   selectedStoreFilter = selectedStoreFilter.type === type && selectedStoreFilter.value === value ? { type: "", value: "" } : { type, value };
   renderStoreCascade();
+  syncAreaFilter();
+}
+
+function syncAreaFilter() {
+  const select = $("#areaFilter");
+  const enabled = selectedStoreFilter.type === "group" && groupNeedsArea(selectedStoreFilter.value);
+  select.disabled = !enabled;
+  select.innerHTML = enabled ? `<option value="">全部分区</option>${optionHtml(splitAreas, item => item, item => item, select.value)}` : `<option value="">-</option>`;
+  if (!enabled) select.value = "";
 }
 
 function getFilterGroupCodes() {
@@ -285,16 +308,13 @@ function createFormLine(data = {}, canRemove = false) {
   const area = data.area || "";
   const areaEnabled = groupNeedsArea(selectedGroup);
   return `<div class="add-row" data-form-line>
-    ${createSingleSelect("group", groups, selectedGroup, "请选择柜组", item => item, item => item)}
-    <select data-field="area" ${areaEnabled ? "" : "disabled"}><option value="">${areaEnabled ? "请选择分区" : "无需选择分区"}</option>${optionHtml(splitAreas, item => item, item => item, area)}</select>
-    <input data-field="employeeText" placeholder="请输入员工姓名 / 工号" value="${escapeHtml(employeeText)}" title="按“姓名 / 工号”输入，例如：陈亚琳 / 26081021" />
-    <select data-field="month"><option value="">请选择月份</option>${optionHtml(months, item => item, item => item, month)}</select>
-    <input data-field="attendanceDays" type="number" min="0" max="31" placeholder="出勤天数" value="${escapeHtml(attendanceDays)}" />
-    <input data-field="amount" type="number" min="0" placeholder="请输入目标销售额（元）" value="${escapeHtml(amount)}" />
-    <div class="row-actions">
-      <button class="round-plus" data-add-line title="增加一行">＋</button>
-      ${canRemove ? `<button class="round-minus" data-remove-line title="删除此行">−</button>` : ""}
-    </div>
+    <label class="form-field"><strong><i>*</i>柜组</strong>${createSingleSelect("group", groups, selectedGroup, "请选择柜组", item => item, item => groupLabel(item))}<small><b>校验规则：</b>必填，取门店柜组，展示为“[编码]柜组名称”。</small></label>
+    <label class="form-field"><strong>分区</strong><select data-field="area" ${areaEnabled ? "" : "disabled"}><option value="">${areaEnabled ? "请选择分区" : "无需选择分区"}</option>${optionHtml(splitAreas, item => item, item => item, area)}</select><small><b>校验规则：</b>仅柜组72225101和72225104填写，其他柜组展示“-”。</small></label>
+    <label class="form-field"><strong><i>*</i>员工姓名 / 工号</strong><input data-field="employeeText" placeholder="员工姓名 / 8位工号" value="${escapeHtml(employeeText)}" /><small><b>校验规则：</b>必填，格式为“姓名 / 8位工号”。</small></label>
+    <label class="form-field"><strong><i>*</i>月份</strong><select data-field="month"><option value="">请选择月份</option>${optionHtml(months, item => item, item => item, month)}</select><small><b>校验规则：</b>必填，格式如2026-07。</small></label>
+    <label class="form-field"><strong><i>*</i>出勤天数</strong><input data-field="attendanceDays" type="number" min="0" max="31" step="0.01" placeholder="请输入出勤天数" value="${escapeHtml(attendanceDays)}" /><small><b>校验规则：</b>必填，0-31，最多两位小数。</small></label>
+    <label class="form-field"><strong>目标销售额（元）</strong><input data-field="amount" type="number" min="0" step="0.01" placeholder="请输入目标销售额" value="${escapeHtml(amount)}" /><small><b>校验规则：</b>选填，非负数，最多两位小数。</small></label>
+    <div class="row-actions"><button class="round-plus" data-add-line title="增加一行">＋</button>${canRemove ? `<button class="round-minus" data-remove-line title="删除此行">−</button>` : ""}</div>
   </div>`;
 }
 
@@ -322,9 +342,8 @@ function readFormLines() {
     if (!employeeEntries.length) errors.push(`${prefix}请输入员工信息`);
     if (!month) errors.push(`${prefix}请选择月份`);
     if (!attendanceText) errors.push(`${prefix}请输入出勤天数`);
-    if (attendanceText && (Number.isNaN(attendanceDays) || attendanceDays < 0 || attendanceDays > 31)) errors.push(`${prefix}出勤天数需为0-31之间的数字`);
-    if (!amountText) errors.push(`${prefix}请输入目标销售额`);
-    if (amountText && Number.isNaN(amount)) errors.push(`${prefix}请输入正确的目标销售额`);
+    if (attendanceText && (Number.isNaN(attendanceDays) || attendanceDays < 0 || attendanceDays > 31 || !hasAtMostTwoDecimals(attendanceText))) errors.push(`${prefix}出勤天数需为0-31之间且最多保留两位小数`);
+    if (amountText && (Number.isNaN(amount) || amount < 0 || !hasAtMostTwoDecimals(amountText))) errors.push(`${prefix}目标销售额需为非负数且最多保留两位小数`);
     if (errors.length) return;
     employeeEntries.forEach(entry => {
       if (entry.raw) errors.push(`${prefix}员工信息需按“姓名 / 工号”格式输入`);
@@ -344,11 +363,11 @@ function findDuplicateRows(rows, ignoredId = null) {
     const key = recordUniqueKey(row);
     if (inputKeys.has(key)) {
       duplicateKeys.add(key);
-      messages.push(`第${inputKeys.get(key) + 1}行与第${index + 1}行重复：${row.month} / ${baseGroup(row.group)} / ${row.employeeName} / ${row.employeeId}`);
+      messages.push(`第${inputKeys.get(key) + 1}行与第${index + 1}行重复：${groupLabel(row.group)} / ${row.employeeId} / ${row.month}`);
     } else inputKeys.set(key, index);
     if (existingKeys.has(key)) {
       duplicateKeys.add(key);
-      messages.push(`第${index + 1}行与已有数据重复：${row.month} / ${baseGroup(row.group)} / ${row.employeeName} / ${row.employeeId}`);
+      messages.push(`第${index + 1}行与已有数据重复：${groupLabel(row.group)} / ${row.employeeId} / ${row.month}`);
     }
   });
   return { messages };
@@ -375,7 +394,7 @@ function render() {
   const totalPages = Math.max(1, Math.ceil(filteredRecords.length / pageSize));
   currentPage = Math.min(Math.max(currentPage, 1), totalPages);
   const pageRecords = filteredRecords.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  body.innerHTML = pageRecords.map(record => `<tr class="${selectedIds.has(record.id) ? "selected" : ""}"><td><input type="checkbox" data-select="${record.id}" ${selectedIds.has(record.id) ? "checked" : ""} /></td><td title="${record.group}">${record.group}</td><td>${record.employeeName}</td><td>${record.employeeId}</td><td>${record.month}</td><td>${record.attendanceDays ?? ""}</td><td>${formatAmount(record.amount)}</td><td>${record.updatedBy}</td><td>${record.updatedAt}</td><td><div class="ops"><a href="#" data-copy="${record.id}">复制</a><a href="#" data-edit="${record.id}">修改</a><a href="#" data-delete="${record.id}">删除</a></div></td></tr>`).join("");
+  body.innerHTML = pageRecords.map(record => `<tr class="${selectedIds.has(record.id) ? "selected" : ""}"><td><input type="checkbox" data-select="${record.id}" ${selectedIds.has(record.id) ? "checked" : ""} /></td><td title="${escapeHtml(groupLabel(record.group))}">${escapeHtml(groupLabel(record.group))}</td><td>${escapeHtml(recordArea(record) || "-")}</td><td>${escapeHtml(record.employeeName)}</td><td>${escapeHtml(record.employeeId)}</td><td>${record.month}</td><td>${record.attendanceDays ?? ""}</td><td>${formatAmount(record.amount)}</td><td>${escapeHtml(record.updatedBy)}</td><td>${record.updatedAt}</td><td><div class="ops"><a href="#" data-copy="${record.id}">复制</a><a href="#" data-edit="${record.id}">修改</a><a href="#" data-delete="${record.id}">删除</a></div></td></tr>`).join("");
   $("#emptyState").hidden = filteredRecords.length > 0;
   $("#totalText").textContent = `共 ${filteredRecords.length} 条`;
   $("#jumpPage").value = currentPage;
@@ -402,13 +421,13 @@ function syncSelectionState(pageRecords = []) {
 }
 
 function applyFilters() {
-  const storeCodes = getFilterGroupCodes(), name = $("#nameFilter").value.trim(), employeeIds = parseMultiValueText($("#employeeIdFilter").value), { start: monthStart, end: monthEnd } = selectedMonthRange;
+  const storeCodes = getFilterGroupCodes(), area = $("#areaFilter").value, name = $("#nameFilter").value.trim(), employeeIds = parseMultiValueText($("#employeeIdFilter").value), { start: monthStart, end: monthEnd } = selectedMonthRange;
   const min = Number($("#minAmount").value || 0), max = Number($("#maxAmount").value || Number.MAX_SAFE_INTEGER), keyword = $("#globalSearch").value.trim();
   filteredRecords = records.filter(record => {
     const recordGroup = baseGroup(record.group);
     const teamName = groupToTeam.get(recordGroup) || "";
     const inMonthRange = !monthStart || record.month >= monthStart && record.month <= (monthEnd || monthStart);
-    return (!storeCodes || storeCodes.has(recordGroup)) && (!name || record.employeeName.includes(name)) && (!employeeIds.length || employeeIds.some(employeeId => record.employeeId.includes(employeeId))) && inMonthRange && record.amount >= min && record.amount <= max && (!keyword || [record.group, teamName, storeTree.code, record.employeeName, record.employeeId, record.month, record.updatedBy].some(value => String(value).includes(keyword)));
+    return (!storeCodes || storeCodes.has(recordGroup)) && (!area || recordArea(record) === area) && (!name || record.employeeName === name) && (!employeeIds.length || employeeIds.some(employeeId => record.employeeId === employeeId)) && inMonthRange && record.amount >= min && record.amount <= max && (!keyword || [groupLabel(record.group), teamName, `[${storeTree.code}]${storeTree.name}`, record.employeeName, record.employeeId, record.month, record.updatedBy].some(value => String(value).includes(keyword)));
   });
   currentPage = 1; selectedIds.clear(); render(); toast(`查询完成，共 ${filteredRecords.length} 条数据`);
 }
@@ -417,6 +436,7 @@ function resetFilters() {
   selectedStoreFilter = { type: "", value: "" };
   selectedMonthRange = { start: "", end: "" };
   renderStoreCascade();
+  syncAreaFilter();
   renderMonthPicker();
   ["#nameFilter", "#employeeIdFilter", "#minAmount", "#maxAmount", "#globalSearch"].forEach(selector => $(selector).value = "");
   filteredRecords = [...records]; selectedIds.clear(); currentPage = 1; render(); toast("筛选条件已重置");
@@ -439,7 +459,7 @@ function saveRecord() {
   if (editingId && rows.length !== 1) { $("#formTip").textContent = "修改时仅支持选择一个柜组和一名员工"; return; }
   const duplicateResult = findDuplicateRows(rows, editingId);
   if (duplicateResult.messages.length) {
-    const message = `发现重复数据，唯一值为“月份 + 柜组 + 员工姓名 + 工号”。\n${duplicateResult.messages.slice(0, 4).join("\n")}`;
+    const message = `发现重复数据，唯一值为“柜组 + 工号 + 月份”。\n${duplicateResult.messages.slice(0, 4).join("\n")}`;
     $("#formTip").textContent = duplicateResult.messages[0];
     alertDuplicate(message);
     return;
@@ -500,23 +520,24 @@ function downloadTemplate() {
   const csv = [
     "模板规则说明,,,,,,",
     "数据权限,按柜组控制，仅允许导入当前用户所属柜组,,,,,",
-    "唯一值校验,月份 + 柜组 + 员工姓名 + 工号 不允许重复,,,,,",
+    "唯一值校验,柜组 + 工号 + 月份 不允许重复,,,,,",
+    "必填字段,柜组、员工姓名、工号、月份、出勤天数均为必填,,,,,",
     "工号格式,必须为8位数字,,,,,",
-    "分区填写,仅柜组72225101和72225104填写；其他柜组留空,,,,,",
-    "出勤天数,必填数字字段，建议填写0-31之间的数字,,,,,",
-    "月份格式,与报表保持一致，按文本填写年-月格式（例如 =\"2026-07\"），避免Excel自动显示为Jul-26,,,,,",
+    "月份格式,使用日期格式，例如2026-07,,,,,",
+    "数值格式,出勤天数支持整数或最多两位小数；目标销售额为非负数且最多保留两位小数,,,,,",
+    "分区填写,仅T3入境团队的柜组72225101和72225104填写；其他柜组填写-,,,,,",
     "填写字段,,,,,,",
     "月份,柜组,分区,员工姓名,工号,出勤天数,目标销售额（元）",
-    "=\"2026-07\",72222201,,陈亚琳,26081021,24,100000",
-    "=\"2026-07\",72225101,烟区,唐伟,26081022,23,125000",
-    "=\"2026-07\",72225104,香化A,蒙海晓,26081023,22,68000"
+    "=\"2026-07\",[72222201]T3E14香化,-,陈亚琳,26081021,24,100000",
+    "=\"2026-07\",[72225101]T3CI1,烟区,唐伟,26081022,23.5,125000.50",
+    "=\"2026-07\",[72225104]T3CI4,香化A,蒙海晓,26081023,22,68000"
   ].join("\n");
   downloadCsv("员工销售目标填报模板.csv", csv);
 }
 
 function exportCurrentPage() {
   const rows = filteredRecords.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  const csv = ["柜组,员工姓名,工号,月份,出勤天数,目标销售额（元）,最后更新人,最后更新时间", ...rows.map(row => [row.group, row.employeeName, row.employeeId, row.month, row.attendanceDays ?? "", row.amount, row.updatedBy, row.updatedAt].join(","))].join("\n");
+  const csv = ["柜组,分区,员工姓名,工号,月份,出勤天数,目标销售额（元）,最后更新人,最后更新时间", ...rows.map(row => [groupLabel(row.group), recordArea(row) || "-", row.employeeName, row.employeeId, row.month, row.attendanceDays ?? "", row.amount, row.updatedBy, row.updatedAt].join(","))].join("\n");
   downloadCsv("sales-target-current-page.csv", csv);
 }
 
@@ -543,6 +564,7 @@ $("#multiValueInput").addEventListener("input", updateMultiValueCount);
 $("#confirmMultiValueBtn").addEventListener("click", confirmEmployeeIdMultiValue);
 $("#fullscreenBtn").addEventListener("click", () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.());
 $("#collapseBtn").addEventListener("click", () => { $("#filters").classList.toggle("collapsed"); $("#collapseBtn").textContent = $("#filters").classList.contains("collapsed") ? "⌄" : "⌃"; });
+$("#guidanceToggle").addEventListener("click", () => { $("#guidance").classList.toggle("collapsed"); $("#guidanceToggle span").textContent = $("#guidance").classList.contains("collapsed") ? "点击展开" : "点击收起"; });
 $("#selectAll").addEventListener("change", event => { filteredRecords.slice((currentPage - 1) * pageSize, currentPage * pageSize).forEach(record => event.target.checked ? selectedIds.add(record.id) : selectedIds.delete(record.id)); render(); });
 $("#storeFilter").addEventListener("click", event => {
   const trigger = event.target.closest("[data-cascade-trigger]");

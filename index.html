@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>员工销售目标维护 - 高保真原型</title>
-  <link rel="stylesheet" href="./styles.css?v=20260715-template-fields" />
+  <link rel="stylesheet" href="./styles.css?v=20260731-guidance" />
 </head>
 <body>
   <div class="app">
@@ -28,13 +28,23 @@
     <main class="page">
       <div class="tabs"><button>经营看板 <span>×</span></button><button class="selected">员工销售目标维护 <span>×</span></button></div>
 
+      <section class="guidance" id="guidance">
+        <button type="button" class="guidance-head" id="guidanceToggle"><strong>筛选项及展示列表说明</strong><span>点击收起</span></button>
+        <div class="guidance-body">
+          <section><h3>一、筛选项</h3><p class="guidance-highlight">门店当前仅支持：[7222]中免集团(北京)免税品有限公司；柜组展示为“[编码]柜组名称”。</p><ul><li>柜组：对应门店柜组；分区仅柜组72225101和72225104可选烟区、精品区、酒水区、香化A、香化B，其他柜组置灰。</li><li>员工姓名：精准查询已填写的员工姓名；工号：精准查询已填写的8位员工工号。</li><li>月份：使用月份范围组件；目标销售额支持按区间筛选。</li></ul></section>
+          <section><h3>二、展示列表</h3><p>依次展示柜组、分区、员工姓名、工号、月份、出勤天数、目标销售额（元）；非T3入境指定柜组的分区展示为“-”。</p></section>
+        </div>
+      </section>
+
       <section class="filters" id="filters">
         <div class="filter-grid">
-          <label><span>门店</span><div class="cascade-select" id="storeFilter"><button type="button" class="cascade-trigger placeholder" data-cascade-trigger><span data-cascade-text>请选择门店/团队/柜组</span><b>⌄</b></button><div class="cascade-panel" data-cascade-panel></div></div></label>
-          <label><span>姓名</span><input id="nameFilter" placeholder="请输入姓名" /></label>
-          <label><span>工号</span><div class="lookup"><input id="employeeIdFilter" placeholder="请输入工号" /><button id="pickEmployeeBtn">•••</button></div></label>
+          <label><span>门店</span><input class="store-fixed" value="[7222]中免集团(北京)免税品有限公司" disabled /></label>
+          <label><span>柜组</span><div class="cascade-select" id="storeFilter"><button type="button" class="cascade-trigger placeholder" data-cascade-trigger><span data-cascade-text>请选择柜组</span><b>⌄</b></button><div class="cascade-panel" data-cascade-panel></div></div></label>
+          <label><span>分区</span><select id="areaFilter" disabled><option value="">-</option></select></label>
+          <label><span>员工姓名</span><input id="nameFilter" placeholder="请输入员工姓名" /></label>
+          <label><span>工号</span><div class="lookup"><input id="employeeIdFilter" placeholder="请输入8位工号" /><button id="pickEmployeeBtn">•••</button></div></label>
           <label><span>月份</span><div class="month-picker" id="monthFilter"><button type="button" class="month-trigger placeholder" data-month-trigger><span class="calendar-icon">▦</span><span data-month-text>开始日期　-　结束日期</span></button><div class="month-panel" data-month-panel></div></div></label>
-          <label class="amount"><span>目标销售额(元)</span><div class="range"><input id="minAmount" type="number" placeholder="请输入" /><em>-</em><input id="maxAmount" type="number" placeholder="请输入" /></div></label>
+          <label class="amount"><span>目标销售额(元)</span><div class="range"><input id="minAmount" type="number" step="0.01" placeholder="请输入" /><em>-</em><input id="maxAmount" type="number" step="0.01" placeholder="请输入" /></div></label>
           <div class="filter-buttons"><button class="primary small" id="queryBtn">⌕ 查询</button><button class="ghost small" id="resetBtn">↻ 重置</button></div>
         </div>
         <button class="collapse" id="collapseBtn" aria-label="折叠筛选">⌃</button>
@@ -46,14 +56,14 @@
           <button class="outline disabled" id="editSelectedBtn" disabled>修改</button>
           <button class="outline" id="importBtn">导入</button>
           <button class="danger disabled" id="batchDeleteBtn" disabled>▥ 批量删除</button>
-          <a class="dataset-link" href="./test-data/sales-target-test-data.csv?v=20260717-month-format" download="员工销售目标测试数据集.csv">测试数据集</a>
+          <a class="dataset-link" href="./test-data/sales-target-test-data.csv?v=20260731-group-labels" download="员工销售目标测试数据集.csv">测试数据集</a>
         </div>
       </section>
 
       <section class="table-wrap">
         <table>
           <thead>
-            <tr><th class="check"><input type="checkbox" id="selectAll" /></th><th>柜组</th><th>员工姓名</th><th>工号</th><th>月份</th><th>出勤天数</th><th>目标销售额（元）</th><th>最后更新人</th><th>最后更新时间</th><th>操作</th></tr>
+            <tr><th class="check"><input type="checkbox" id="selectAll" /></th><th>柜组</th><th>分区</th><th>员工姓名</th><th>工号</th><th>月份</th><th>出勤天数</th><th>目标销售额（元）</th><th>最后更新人</th><th>最后更新时间</th><th>操作</th></tr>
           </thead>
           <tbody id="tableBody"></tbody>
         </table>
@@ -80,11 +90,12 @@
       <div class="import-rules">
         <strong>导入校验说明</strong>
         <span>数据权限按柜组控制，仅允许导入当前用户所属柜组。</span>
-        <span>唯一值按“月份 + 柜组 + 员工姓名 + 工号”校验，重复数据提交或导入时弹窗提醒。</span>
-        <span>工号必须为8位数字；出勤天数为必填数字字段。</span>
-        <span>模板包含“分区”字段，仅柜组72225101和72225104需要填写；其他柜组无需填写。</span>
+        <span>唯一值按“柜组 + 工号 + 月份”校验，重复数据提交或导入时弹窗提醒。</span>
+        <span>柜组、员工姓名、工号、月份、出勤天数均为必填；工号必须为8位数字。</span>
+        <span>月份格式为日期格式，如2026-07；出勤天数、目标销售额支持整数或最多两位小数。</span>
+        <span>模板包含“分区（仅T3入境团队填写）”字段，仅柜组72225101和72225104需要填写；其他柜组无需填写并展示为“-”。</span>
       </div>
-      <p class="hint">仅允许导入xls、xlsx、csv格式文件。<a href="./test-data/sales-target-import-template.csv?v=20260717-report-month-format" download="员工销售目标填报模板.csv">下载员工销售目标填报模板</a></p>
+      <p class="hint">仅允许导入xls、xlsx、csv格式文件。<a href="./test-data/sales-target-import-template.csv?v=20260731-group-labels" download="员工销售目标填报模板.csv">下载员工销售目标填报模板</a></p>
       <div class="modal-actions"><button class="primary" id="confirmImportBtn">确定</button><button class="ghost" data-close>取消</button></div>
     </div>
   </div>
@@ -92,6 +103,7 @@
   <div class="modal-mask" id="editModal" hidden>
     <div class="modal add-modal">
       <div class="modal-head"><h2 id="editTitle">新增</h2><button class="close" data-close>×</button></div>
+      <div class="editor-rules"><strong>新增校验说明</strong><span>唯一值按“柜组 + 工号 + 月份”校验；重复数据提交时弹窗提醒。</span><span>带 * 字段为必填项，数值字段最多保留两位小数。</span></div>
       <div class="add-lines" id="formLines"></div>
       <div class="form-tip" id="formTip"></div>
       <div class="modal-actions"><button class="primary" id="saveBtn">确定</button><button class="ghost" data-close>取消</button></div>
@@ -110,7 +122,7 @@
   </div>
 
   <div class="toast" id="toast" hidden></div>
-  <script src="./script.js?v=20260715-template-fields"></script>
+  <script src="./script.js?v=20260731-guidance"></script>
 </body>
 </html>
 
