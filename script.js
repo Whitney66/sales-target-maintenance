@@ -49,6 +49,13 @@ function queryRows() {
 function openModal(id) { document.getElementById(id).hidden = false; }
 function closeModals() { document.querySelectorAll(".modal-mask").forEach(modal => { modal.hidden = true; }); }
 
+const guidanceToggle = document.getElementById("guidanceToggle");
+guidanceToggle.addEventListener("click", () => {
+  const guidance = document.getElementById("guidance");
+  guidance.classList.toggle("collapsed");
+  document.getElementById("guidanceToggleText").textContent = guidance.classList.contains("collapsed") ? "点击展开" : "点击收起";
+});
+
 refreshStoreOptions();
 renderRows();
 storeFilter.addEventListener("change", refreshStoreOptions);
