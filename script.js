@@ -1,71 +1,691 @@
-const names = ["陈亚琳", "唐伟", "蒙海晓", "胡巧菊", "张艺", "李明", "王一诺", "赵敏"];
-const stores = {
-  "7222": { name: "中免集团(北京)免税品有限公司", groups: ["72225101", "72225104"], zones: ["烟区", "精品区", "酒水区", "香化A", "香化B", "-"] },
-  "7223": { name: "中免集团北京大兴国际机场免税品有限公司", groups: ["72235101", "72235102", "72235201", "72235301"], zones: ["烟酒区", "香化区", "精品区", "-"] }
+const storeTree = {
+  code: "7222",
+  name: "中免集团(北京)免税品有限公司",
+  manager: "李晓楠",
+  teams: [
+    { name: "T3香化", groups: ["72222201", "72222401", "72221301", "72222501"] },
+    { name: "T3烟酒", groups: ["72221201", "72221501", "72222301", "72222901"] },
+    { name: "T3精品专卖", groups: ["72221601", "72221602", "72221603", "72221604", "72221605", "72221607", "72221801", "72221704", "72222801", "72222802", "72222803", "72222804", "72222805", "72222806"] },
+    { name: "T3精品综合", groups: ["72221401", "72221606", "72221701", "72221702", "72221802", "72221901", "72221902", "72222601", "72222602", "72222603", "72222604", "72222701", "72222702", "72223001"] },
+    { name: "T3入境", groups: ["72225101", "72225102", "72225103", "72225104"] }
+  ]
 };
-const teams = ["烟酒团队", "精品团队", "香化团队"];
-const body = document.getElementById("tableBody");
-const emptyState = document.getElementById("emptyState");
-const storeFilter = document.getElementById("storeFilter");
-const groupFilter = document.getElementById("groupFilter");
-const zoneFilter = document.getElementById("zoneFilter");
+const groups = storeTree.teams.flatMap(team => team.groups);
+const groupNames = {
+  "72225101":"T3CI1", "72225102":"T3CI2", "72225103":"T3CI3", "72225104":"T3CI4",
+  "72222201":"T3E14香化", "72222401":"T3E18香化", "72221301":"T3E03", "72222501":"T3E19",
+  "72221201":"T3E02烟酒", "72221501":"T3E07", "72222301":"T3E15", "72222901":"T3E23",
+  "72221601":"T3E0801精品Chloe", "72221602":"T3E0802精品Kenzo", "72221603":"T3E0803精品MCM", "72221604":"T3E0804精品Coach", "72221605":"T3E0805精品TB", "72221607":"T3E0807精品Fashion",
+  "72221801":"T3E1001精品", "72221704":"T3E0904精品", "72222801":"T3E2201精品BV", "72222802":"T3E2202精品YSL", "72222803":"巴黎世家", "72222804":"T3E2204精品Burberry", "72222805":"T3E2205精品Moncler", "72222806":"T3E2206精品Ferragamo",
+  "72221401":"T3E05精品太阳镜", "72221606":"T3E0806精品Montblanc", "72221701":"T3E0901精品", "72221702":"T3E0902精品", "72221802":"T3E1002精品", "72221901":"T3E1101精品TUMI", "72221902":"T3E1102",
+  "72222601":"T3E2001精品Chopard", "72222602":"T3E2002精品Bvlgari", "72222603":"T3E2003精品Qeelin", "72222604":"T3E2004精品Omega", "72222701":"T3E2101", "72222702":"T3E2102", "72223001":"T3E24"
+};
+const groupToTeam = new Map(storeTree.teams.flatMap(team => team.groups.map(group => [group, team.name])));
+const splitGroupCodes = new Set(["72225101", "72225104"]);
+const splitAreas = ["烟区", "精品区", "酒水区", "香化A", "香化B"];
+const monthNames = ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"];
+const employees = [
+  { name: "陈亚琳", id: "26081021" }, { name: "唐伟", id: "26081022" }, { name: "蒙海晓", id: "26081023" }, { name: "胡巧菊", id: "26081024" },
+  { name: "王一诺", id: "26081025" }, { name: "赵敏", id: "26081026" }, { name: "李明", id: "26081027" }, { name: "刘佳", id: "26081028" },
+  { name: "周晴", id: "26081029" }, { name: "吴越", id: "26081030" }, { name: "孙晨", id: "26081031" }, { name: "黄静", id: "26081032" }
+];
+const allowedImportGroups = new Set(groups.slice(0, 18));
+const months = ["2026-07", "2026-06", "2026-05", "2026-04"];
+let records = createRecords();
+let filteredRecords = [...records];
+let selectedIds = new Set();
+let currentPage = 1;
+let pageSize = 30;
+let editingId = null;
+let pickedFileName = "";
+let multiValueTarget = "employeeId";
+let selectedGroupFilters = new Set();
+let activeCascadeTeam = storeTree.teams[0].name;
+let selectedMonthRange = { start: "", end: "" };
+let monthPanelYear = 2026;
 
-function options(select, values, all = true) {
-  select.innerHTML = (all ? '<option value="">全部</option>' : '') + values.map(value => `<option value="${value}">${value}</option>`).join("");
+const $ = selector => document.querySelector(selector);
+const body = $("#tableBody");
+
+function createRecords() {
+  const editors = ["蒙海晓", "唐伟", "陈亚琳", "胡巧菊"];
+  return Array.from({ length: 96 }, (_, index) => {
+    const employee = employees[index % employees.length];
+    const group = groups[index % groups.length];
+    const month = months[Math.floor(index / 24) % months.length];
+    const area = groupNeedsArea(group) ? splitAreas[Math.floor(index / groups.length) % splitAreas.length] : "";
+    return { id: `target-${index + 1}`, group, area, employeeName: employee.name, employeeId: employee.id, month, attendanceDays: 22 + (index % 5), amount: index % 11 === 0 ? 0 : 20000 + (index % 17) * 3500 + Math.floor(index / 8) * 1000, updatedBy: editors[index % editors.length], updatedAt: `2026-07-${String(3 - Math.min(2, Math.floor(index / 36))).padStart(2, "0")} ${String(10 + (index % 7)).padStart(2, "0")}:${String(16 + (index % 40)).padStart(2, "0")}:24` };
+  });
 }
-function refreshStoreOptions() {
-  const store = stores[storeFilter.value];
-  options(groupFilter, store.groups);
-  options(zoneFilter, store.zones);
+
+function formatAmount(value) { return Number(value).toLocaleString("zh-CN", { maximumFractionDigits: 0 }); }
+function escapeHtml(value = "") { return String(value).replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char])); }
+function optionHtml(items, getValue, getLabel, selected) { return items.map(item => `<option value="${escapeHtml(getValue(item))}" ${getValue(item) === selected ? "selected" : ""}>${escapeHtml(getLabel(item))}</option>`).join(""); }
+function baseGroup(value = "") { return String(value).split("-")[0]; }
+function groupNeedsArea(group) { return splitGroupCodes.has(baseGroup(group)); }
+function groupLabel(group) { const code = baseGroup(group); return `[${code}]${groupNames[code] || ""}`; }
+function recordArea(record = {}) { return record.area || (String(record.group || "").includes("-") ? String(record.group).split("-").slice(1).join("-") : ""); }
+function recordUniqueKey(record) { return [baseGroup(record.group), record.employeeId, record.month].join("|"); }
+function isEightDigitEmployeeId(value) { return /^\d{8}$/.test(String(value || "")); }
+function hasAtMostTwoDecimals(value) { return /^\d+(\.\d{1,2})?$/.test(String(value || "")); }
+function alertDuplicate(message) { alert(message); }
+
+function fillOptions() {
+  renderStoreCascade();
+  syncAreaFilter();
+  renderMonthPicker();
 }
-function seedRows() {
+
+function storeFilterLabel() {
+  const selected = [...selectedGroupFilters];
+  if (!selected.length) return "请选择柜组";
+  if (selected.length === groups.length) return `[${storeTree.code}]${storeTree.name}（全部柜组）`;
+  if (selected.length === 1) return groupLabel(selected[0]);
+  return `${selected.slice(0, 2).map(groupLabel).join("、")} 等${selected.length}项`;
+}
+
+function renderStoreCascade() {
+  const panel = $("#storeFilter [data-cascade-panel]");
+  const allSelected = groups.every(group => selectedGroupFilters.has(group));
+  panel.innerHTML = `<div class="cascade-col store-col"><label class="cascade-option ${allSelected ? "selected" : ""}" data-cascade-type="store" data-cascade-value="${storeTree.code}"><input type="checkbox" ${allSelected ? "checked" : ""} /> <span>[${storeTree.code}]${escapeHtml(storeTree.name)}</span></label></div>
+    <div class="cascade-col team-col">${storeTree.teams.map(team => { const teamSelected = team.groups.every(group => selectedGroupFilters.has(group)); return `<label class="cascade-option ${activeCascadeTeam === team.name ? "selected" : ""}" data-cascade-type="team" data-cascade-value="${escapeHtml(team.name)}"><input type="checkbox" ${teamSelected ? "checked" : ""} /> <span>${escapeHtml(team.name)}</span><em>›</em></label>`; }).join("")}</div>
+    <div class="cascade-col group-col">${storeTree.teams.map(team => `<div class="cascade-group-list ${activeCascadeTeam === team.name ? "active" : ""}" data-team="${escapeHtml(team.name)}">${team.groups.map(group => `<label class="cascade-option" data-cascade-type="group" data-cascade-value="${group}"><input type="checkbox" ${selectedGroupFilters.has(group) ? "checked" : ""} /> <span>${escapeHtml(groupLabel(group))}</span></label>`).join("")}</div>`).join("")}</div>`;
+  const trigger = $("#storeFilter [data-cascade-trigger]");
+  $("#storeFilter [data-cascade-text]").textContent = storeFilterLabel();
+  trigger.classList.toggle("placeholder", !selectedGroupFilters.size);
+}
+
+function setStoreFilter(type, value) {
+  const targetGroups = type === "store" ? groups : type === "team" ? storeTree.teams.find(team => team.name === value)?.groups || [] : [value];
+  const shouldSelect = targetGroups.some(group => !selectedGroupFilters.has(group));
+  targetGroups.forEach(group => shouldSelect ? selectedGroupFilters.add(group) : selectedGroupFilters.delete(group));
+  if (type === "team") activeCascadeTeam = value;
+  if (type === "group") activeCascadeTeam = groupToTeam.get(value) || activeCascadeTeam;
+  renderStoreCascade();
+  syncAreaFilter();
+}
+
+function selectedAreaFilters() {
+  return [...document.querySelectorAll('#areaFilter input[type="checkbox"]:checked')].map(input => input.value);
+}
+
+function updateAreaFilterText() {
+  const selected = selectedAreaFilters();
+  const text = $("#areaFilter [data-area-text]");
+  text.textContent = selected.length === splitAreas.length ? "全部分区" : selected.length ? selected.join("、") : "未选择";
+}
+
+function syncAreaFilter() {
+  const filter = $("#areaFilter");
+  const trigger = filter.querySelector("[data-area-trigger]");
+  const menu = filter.querySelector("[data-area-menu]");
+  const enabled = selectedGroupFilters.size > 0 && [...selectedGroupFilters].every(groupNeedsArea);
+  filter.classList.toggle("disabled", !enabled);
+  filter.classList.remove("open");
+  trigger.disabled = !enabled;
+  menu.innerHTML = enabled ? `<div class="area-filter-actions"><button type="button" data-area-all>全选</button><button type="button" data-area-clear>清空</button></div>${splitAreas.map(area => `<label><input type="checkbox" value="${area}" checked /><span>${area}</span></label>`).join("")}` : "";
+  filter.querySelector("[data-area-text]").textContent = enabled ? "全部分区" : "-";
+}
+
+function getFilterGroupCodes() {
+  return selectedGroupFilters.size ? new Set(selectedGroupFilters) : null;
+}
+
+function monthLabel(value) {
+  if (!value) return "";
+  const [year, month] = value.split("-");
+  return `${year}/${month}`;
+}
+
+function formatMonthRangeLabel() {
+  const { start, end } = selectedMonthRange;
+  if (!start && !end) return "开始日期　-　结束日期";
+  return `${monthLabel(start)}　-　${monthLabel(end || start)}`;
+}
+
+function shiftMonth(value, offset) {
+  const [year, month] = value.split("-").map(Number);
+  const date = new Date(year, month - 1 + offset, 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function setSelectedMonthRange(start, end = start) {
+  selectedMonthRange = start && end && start > end ? { start: end, end: start } : { start, end };
+  if (selectedMonthRange.start) monthPanelYear = Number(selectedMonthRange.start.slice(0, 4));
+  renderMonthPicker();
+}
+
+function pickMonthRange(value) {
+  const { start, end } = selectedMonthRange;
+  if (!start || end) setSelectedMonthRange(value, "");
+  else setSelectedMonthRange(start, value);
+}
+
+function shortcutMonthRange(type) {
+  const now = "2026-07";
+  const yearStart = `${now.slice(0, 4)}-01`;
+  const quarterStart = `${now.slice(0, 4)}-${String(Math.floor((Number(now.slice(5, 7)) - 1) / 3) * 3 + 1).padStart(2, "0")}`;
+  const ranges = {
+    current: [now, now],
+    previous: [shiftMonth(now, -1), shiftMonth(now, -1)],
+    recent3: [shiftMonth(now, -2), now],
+    quarter: [quarterStart, now],
+    year: [yearStart, now],
+    lastYear: [`${Number(now.slice(0, 4)) - 1}-01`, `${Number(now.slice(0, 4)) - 1}-12`]
+  };
+  return ranges[type] || [now, now];
+}
+
+function monthButtonClass(value) {
+  const { start, end } = selectedMonthRange;
+  const isEdge = value === start || value === end;
+  const inRange = start && end && value >= start && value <= end;
+  return [isEdge ? "selected" : "", inRange && !isEdge ? "in-range" : ""].filter(Boolean).join(" ");
+}
+
+function renderMonthPicker() {
+  const picker = $("#monthFilter");
+  const trigger = picker.querySelector("[data-month-trigger]");
+  const text = picker.querySelector("[data-month-text]");
+  text.textContent = formatMonthRangeLabel();
+  trigger.classList.toggle("placeholder", !selectedMonthRange.start);
+  picker.querySelector("[data-month-panel]").innerHTML = `<div class="quick-months">
+    <button type="button" data-month-shortcut="current">本月</button>
+    <button type="button" data-month-shortcut="previous">上月</button>
+    <button type="button" data-month-shortcut="recent3">近3个月</button>
+    <button type="button" data-month-shortcut="quarter">本季</button>
+    <button type="button" data-month-shortcut="year">今年</button>
+    <button type="button" data-month-shortcut="lastYear">去年</button>
+  </div><div class="month-grid-wrap">
+    <div class="month-year"><button type="button" data-month-year="prev">«</button><strong>${monthPanelYear} 年</strong><button type="button" data-month-year="next">»</button></div>
+    <div class="month-grid">${monthNames.map((name, index) => {
+      const value = `${monthPanelYear}-${String(index + 1).padStart(2, "0")}`;
+      return `<button type="button" class="${monthButtonClass(value)}" data-month-value="${value}">${name}</button>`;
+    }).join("")}</div>
+  </div>`;
+}
+
+function closeMonthPicker() { $("#monthFilter").classList.remove("open"); }
+
+function normalizeRecordForForm(record = {}) {
+  const rawGroup = record.group || "";
+  const group = baseGroup(rawGroup);
+  const area = record.area || (String(rawGroup).includes("-") ? String(rawGroup).split("-").slice(1).join("-") : "");
+  return { ...record, group, area, groups: group ? [group] : [], employeeIds: record.employeeId ? [record.employeeId] : [] };
+}
+
+function normalizeSelected(value) {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  return value ? [value] : [];
+}
+
+function formatMultiText(labels, placeholder) {
+  if (!labels.length) return placeholder;
+  return labels.length > 2 ? `${labels.slice(0, 2).join("、")} 等${labels.length}项` : labels.join("、");
+}
+
+function createMultiSelect(field, items, selectedValues, placeholder, getValue, getLabel, getShortLabel = getLabel) {
+  const selected = new Set(normalizeSelected(selectedValues));
+  const selectedLabels = items.filter(item => selected.has(getValue(item))).map(item => getShortLabel(item));
+  return `<div class="multi-select" data-multi="${field}" data-placeholder="${escapeHtml(placeholder)}">
+    <button type="button" class="multi-trigger ${selectedLabels.length ? "" : "placeholder"}" data-multi-trigger><span data-multi-text>${escapeHtml(formatMultiText(selectedLabels, placeholder))}</span><b>⌄</b></button>
+    <div class="multi-menu">
+      <div class="multi-menu-head"><span>${escapeHtml(placeholder)}</span><button type="button" data-clear-multi>清空</button></div>
+      ${items.map(item => {
+        const value = getValue(item);
+        const label = getLabel(item);
+        return `<label><input type="checkbox" data-field="${field}" data-short-label="${escapeHtml(getShortLabel(item))}" value="${escapeHtml(value)}" ${selected.has(value) ? "checked" : ""} /><span>${escapeHtml(label)}</span></label>`;
+      }).join("")}
+    </div>
+  </div>`;
+}
+
+function createSingleSelect(field, items, selectedValue, placeholder, getValue, getLabel = getValue) {
+  return `<select data-field="${field}"><option value="">${escapeHtml(placeholder)}</option>${optionHtml(items, getValue, getLabel, selectedValue || "")}</select>`;
+}
+
+function formatEmployeeInput(data = {}) {
+  if (data.employeeText) return data.employeeText;
+  const ids = normalizeSelected(data.employeeIds || data.employeeId);
+  return ids.map(employeeId => {
+    const employee = employees.find(item => item.id === employeeId);
+    return employee ? `${employee.name} / ${employee.id}` : employeeId;
+  }).join("\n");
+}
+
+function parseEmployeeInput(value = "") {
+  return value.split(/[\n,，]+/).map(item => item.trim()).filter(Boolean).map(item => {
+    const match = item.match(/^(.+?)\s*[\/／]\s*(\d+)$/);
+    return match ? { employeeName: match[1].trim(), employeeId: match[2].trim() } : { raw: item };
+  });
+}
+
+function updateMultiSelect(multi) {
+  const labels = [...multi.querySelectorAll('input[type="checkbox"]:checked')].map(input => input.dataset.shortLabel || input.value);
+  const text = multi.querySelector("[data-multi-text]");
+  const trigger = multi.querySelector("[data-multi-trigger]");
+  text.textContent = formatMultiText(labels, multi.dataset.placeholder);
+  trigger.classList.toggle("placeholder", !labels.length);
+}
+
+function closeMultiSelects(except = null) {
+  document.querySelectorAll(".multi-select.open").forEach(multi => { if (multi !== except) multi.classList.remove("open"); });
+}
+
+function closeStoreCascade() { $("#storeFilter").classList.remove("open"); }
+
+function parseMultiValueText(value = "") {
+  return value.split(/[\n,，]+/).map(item => item.trim()).filter(Boolean);
+}
+
+function updateMultiValueCount() {
+  $("#multiValueCount").textContent = parseMultiValueText($("#multiValueInput").value).length;
+}
+
+function openMultiValue(target) {
+  multiValueTarget = target;
+  const config = target === "name" ? { selector: "#nameFilter", title: "编辑员工姓名多值", placeholder: "每行输入一个员工姓名" } : { selector: "#employeeIdFilter", title: "编辑工号多值", placeholder: "每行输入一个8位工号" };
+  const values = parseMultiValueText($(config.selector).value);
+  $("#multiValueModal h2").textContent = config.title;
+  $("#multiValueInput").placeholder = config.placeholder;
+  $("#multiValueInput").value = values.join("\n");
+  updateMultiValueCount();
+  openModal("#multiValueModal");
+  $("#multiValueInput").focus();
+}
+
+function confirmMultiValue() {
+  const values = parseMultiValueText($("#multiValueInput").value);
+  const targetInput = multiValueTarget === "name" ? $("#nameFilter") : $("#employeeIdFilter");
+  targetInput.value = values.join("，");
+  $("#multiValueModal").hidden = true;
+}
+
+function clearMultiSelect(multi) {
+  multi.querySelectorAll('input[type="checkbox"]').forEach(input => input.checked = false);
+  updateMultiSelect(multi);
+  const line = multi.closest("[data-form-line]");
+  if (line && multi.dataset.multi === "group") syncAreaSelect(line);
+}
+
+function syncAreaSelect(line) {
+  const areaSelect = line.querySelector('[data-field="area"]');
+  const group = line.querySelector('[data-field="group"]').value;
+  const enabled = groupNeedsArea(group);
+  areaSelect.disabled = !enabled;
+  if (!enabled) areaSelect.value = "";
+  areaSelect.options[0].textContent = enabled ? "请选择分区" : "无需选择分区";
+}
+
+function syncFormLineState() {
+  document.querySelectorAll("[data-multi]").forEach(updateMultiSelect);
+  document.querySelectorAll("[data-form-line]").forEach(syncAreaSelect);
+}
+
+function createFormLine(data = {}, canRemove = false) {
+  const selectedGroup = normalizeSelected(data.groups || data.group)[0] || "";
+  const employeeText = formatEmployeeInput(data);
+  const month = data.month || "";
+  const amount = data.amount ?? "";
+  const attendanceDays = data.attendanceDays ?? "";
+  const area = data.area || "";
+  const areaEnabled = groupNeedsArea(selectedGroup);
+  return `<div class="add-row" data-form-line>
+    <label class="form-field"><strong><i>*</i>柜组</strong>${createSingleSelect("group", groups, selectedGroup, "请选择柜组", item => item, item => groupLabel(item))}<small><b>校验规则：</b>必填，取门店柜组，展示为“[编码]柜组名称”。</small></label>
+    <label class="form-field"><strong>分区</strong><select data-field="area" ${areaEnabled ? "" : "disabled"}><option value="">${areaEnabled ? "请选择分区" : "无需选择分区"}</option>${optionHtml(splitAreas, item => item, item => item, area)}</select><small><b>校验规则：</b>仅柜组72225101和72225104填写，其他柜组展示“-”。</small></label>
+    <label class="form-field"><strong><i>*</i>员工姓名 / 工号</strong><div class="employee-combobox"><div class="employee-control"><input data-field="employeeText" autocomplete="off" placeholder="搜索或选择员工" value="${escapeHtml(employeeText)}" /><button type="button" data-employee-trigger aria-label="展开员工列表">⌄</button></div><div class="employee-options">${employees.map(employee => `<button type="button" data-employee-value="${escapeHtml(`${employee.name} / ${employee.id}`)}">${escapeHtml(employee.name)} <span>/ ${employee.id}</span></button>`).join("")}</div></div><small><b>校验规则：</b>必填，单选，取自EOP，展示为“姓名 / 8位工号”。</small></label>
+    <label class="form-field"><strong><i>*</i>月份</strong><select data-field="month"><option value="">请选择月份</option>${optionHtml(months, item => item, item => item, month)}</select><small><b>校验规则：</b>必填，格式如2026-07。</small></label>
+    <label class="form-field"><strong><i>*</i>出勤天数</strong><input data-field="attendanceDays" type="number" min="0" max="31" step="0.01" placeholder="请输入出勤天数" value="${escapeHtml(attendanceDays)}" /><small><b>校验规则：</b>必填，0-31，最多两位小数。</small></label>
+    <label class="form-field"><strong>目标销售额（元）</strong><input data-field="amount" type="number" min="0" step="0.01" placeholder="请输入目标销售额" value="${escapeHtml(amount)}" /><small><b>校验规则：</b>选填，非负数，最多两位小数。</small></label>
+    <div class="row-actions"><button class="round-plus" data-add-line title="增加一行">＋</button>${canRemove ? `<button class="round-minus" data-remove-line title="删除此行">−</button>` : ""}</div>
+  </div>`;
+}
+
+function resetFormLines(seed = {}) {
+  $("#formLines").innerHTML = createFormLine(seed, false);
+  $("#formTip").textContent = "";
+  syncFormLineState();
+}
+
+function readFormLines() {
   const rows = [];
-  Object.entries(stores).forEach(([storeCode, store], storeIndex) => store.groups.forEach((group, groupIndex) => {
-    for (let i = 0; i < 3; i += 1) {
-      const employeeIndex = (storeIndex * 3 + groupIndex * 3 + i) % names.length;
-      rows.push({ storeCode, group, zone: storeCode === "7222" && ["72225101", "72225104"].includes(group) ? store.zones[(groupIndex + i) % 5] : store.zones[(groupIndex + i) % store.zones.length], name: names[employeeIndex], job: String(10000001 + employeeIndex * 17 + groupIndex).padStart(8, "0"), month: "2026-07", days: 20 + ((i + groupIndex) % 5), amount: (i + 2 + groupIndex) * 10000 });
+  const errors = [];
+  const lines = [...document.querySelectorAll("[data-form-line]")];
+  lines.forEach((line, index) => {
+    const prefix = lines.length > 1 ? `第${index + 1}行：` : "";
+    const selectedGroup = line.querySelector('[data-field="group"]').value;
+    const employeeEntries = parseEmployeeInput(line.querySelector('[data-field="employeeText"]').value);
+    const month = line.querySelector('[data-field="month"]').value;
+    const area = line.querySelector('[data-field="area"]').value;
+    const attendanceText = line.querySelector('[data-field="attendanceDays"]').value.trim();
+    const attendanceDays = Number(attendanceText);
+    const amountText = line.querySelector('[data-field="amount"]').value.trim();
+    const amount = Number(amountText);
+    if (!selectedGroup) errors.push(`${prefix}请选择柜组`);
+    if (!employeeEntries.length) errors.push(`${prefix}请选择员工`);
+    if (employeeEntries.length > 1) errors.push(`${prefix}员工仅支持单选`);
+    if (!month) errors.push(`${prefix}请选择月份`);
+    if (!attendanceText) errors.push(`${prefix}请输入出勤天数`);
+    if (attendanceText && (Number.isNaN(attendanceDays) || attendanceDays < 0 || attendanceDays > 31 || !hasAtMostTwoDecimals(attendanceText))) errors.push(`${prefix}出勤天数需为0-31之间且最多保留两位小数`);
+    if (amountText && (Number.isNaN(amount) || amount < 0 || !hasAtMostTwoDecimals(amountText))) errors.push(`${prefix}目标销售额需为非负数且最多保留两位小数`);
+    if (errors.length) return;
+    employeeEntries.forEach(entry => {
+      const eopEmployee = !entry.raw && employees.find(employee => employee.name === entry.employeeName && employee.id === entry.employeeId);
+      if (entry.raw) errors.push(`${prefix}请选择EOP员工，格式为“姓名 / 工号”`);
+      else if (!isEightDigitEmployeeId(entry.employeeId)) errors.push(`${prefix}${entry.employeeName}的工号必须为8位数字`);
+      else if (!eopEmployee) errors.push(`${prefix}${entry.employeeName} / ${entry.employeeId}不在EOP员工范围内`);
+      else rows.push({ group: selectedGroup, employeeName: entry.employeeName, employeeId: entry.employeeId, month, area, attendanceDays, amount });
+    });
+  });
+  return { rows, errors };
+}
+
+function findDuplicateRows(rows, ignoredId = null) {
+  const existingKeys = new Map(records.filter(record => record.id !== ignoredId).map(record => [recordUniqueKey(record), record]));
+  const inputKeys = new Map();
+  const duplicateKeys = new Set();
+  const messages = [];
+  rows.forEach((row, index) => {
+    const key = recordUniqueKey(row);
+    if (inputKeys.has(key)) {
+      duplicateKeys.add(key);
+      messages.push(`第${inputKeys.get(key) + 1}行与第${index + 1}行重复：${groupLabel(row.group)} / ${row.employeeId} / ${row.month}`);
+    } else inputKeys.set(key, index);
+    if (existingKeys.has(key)) {
+      duplicateKeys.add(key);
+      messages.push(`第${index + 1}行与已有数据重复：${groupLabel(row.group)} / ${row.employeeId} / ${row.month}`);
     }
-  }));
-  return rows;
+  });
+  return { messages };
 }
-const allRows = seedRows();
 
-function renderRows(rows = allRows) {
-  body.innerHTML = rows.map(row => `<tr><td><input type="checkbox" /></td><td title="[${row.group}]${stores[row.storeCode].name}">[${row.group}]${stores[row.storeCode].name}</td><td>${row.zone}</td><td>${row.name}</td><td>${row.job}</td><td>${row.month}</td><td>${row.days}</td><td>${row.amount.toLocaleString("zh-CN")}</td><td><div class="ops"><a href="#" data-edit>修改</a><a href="#">删除</a></div></td></tr>`).join("");
-  emptyState.hidden = rows.length > 0;
-  document.getElementById("totalText").textContent = `共 ${rows.length} 条`;
+function expandSplitRows(rows, updatedAt) {
+  return rows.flatMap(row => {
+    if (!splitGroupCodes.has(row.group)) return [{ id: `target-${Date.now()}-${Math.random().toString(16).slice(2)}`, ...row, updatedBy: "当前用户", updatedAt }];
+    if (row.area) return [{ id: `target-${Date.now()}-${Math.random().toString(16).slice(2)}`, ...row, group: `${row.group}-${row.area}`, updatedBy: "当前用户", updatedAt }];
+    const base = Math.floor(row.amount / splitAreas.length);
+    const remainder = row.amount - base * splitAreas.length;
+    return splitAreas.map((area, index) => ({
+      id: `target-${Date.now()}-${index}-${Math.random().toString(16).slice(2)}`,
+      ...row,
+      group: `${row.group}-${area}`,
+      amount: base + (index === splitAreas.length - 1 ? remainder : 0),
+      updatedBy: "当前用户",
+      updatedAt
+    }));
+  });
 }
-function splitTerms(value) { return value.split(/[，,\s]+/).map(item => item.trim()).filter(Boolean); }
-function queryRows() {
-  const namesFilter = splitTerms(document.getElementById("nameFilter").value);
-  const jobsFilter = splitTerms(document.getElementById("jobFilter").value);
-  const start = document.getElementById("monthStart").value;
-  const end = document.getElementById("monthEnd").value;
-  const min = Number(document.getElementById("amountMin").value || 0);
-  const maxValue = document.getElementById("amountMax").value;
-  const max = maxValue === "" ? Infinity : Number(maxValue);
-  renderRows(allRows.filter(row => (!storeFilter.value || row.storeCode === storeFilter.value) && (!groupFilter.value || row.group === groupFilter.value) && (!zoneFilter.value || row.zone === zoneFilter.value) && (!namesFilter.length || namesFilter.includes(row.name)) && (!jobsFilter.length || jobsFilter.includes(row.job)) && (!start || row.month >= start) && (!end || row.month <= end) && row.amount >= min && row.amount <= max));
-}
-function openModal(id) { document.getElementById(id).hidden = false; }
-function closeModals() { document.querySelectorAll(".modal-mask").forEach(modal => { modal.hidden = true; }); }
 
-const guidanceToggle = document.getElementById("guidanceToggle");
-guidanceToggle.addEventListener("click", () => {
-  const guidance = document.getElementById("guidance");
-  guidance.classList.toggle("collapsed");
-  document.getElementById("guidanceToggleText").textContent = guidance.classList.contains("collapsed") ? "点击展开" : "点击收起";
+function render() {
+  const totalPages = Math.max(1, Math.ceil(filteredRecords.length / pageSize));
+  currentPage = Math.min(Math.max(currentPage, 1), totalPages);
+  const pageRecords = filteredRecords.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  body.innerHTML = pageRecords.map(record => `<tr class="${selectedIds.has(record.id) ? "selected" : ""}"><td><input type="checkbox" data-select="${record.id}" ${selectedIds.has(record.id) ? "checked" : ""} /></td><td title="${escapeHtml(groupLabel(record.group))}">${escapeHtml(groupLabel(record.group))}</td><td>${escapeHtml(recordArea(record) || "-")}</td><td>${escapeHtml(record.employeeName)}</td><td>${escapeHtml(record.employeeId)}</td><td>${record.month}</td><td>${record.attendanceDays ?? ""}</td><td>${formatAmount(record.amount)}</td><td>${escapeHtml(record.updatedBy)}</td><td>${record.updatedAt}</td><td><div class="ops"><a href="#" data-copy="${record.id}">复制</a><a href="#" data-edit="${record.id}">修改</a><a href="#" data-delete="${record.id}">删除</a></div></td></tr>`).join("");
+  $("#emptyState").hidden = filteredRecords.length > 0;
+  $("#totalText").textContent = `共 ${filteredRecords.length} 条`;
+  $("#jumpPage").value = currentPage;
+  $("#prevPage").disabled = currentPage <= 1;
+  $("#nextPage").disabled = currentPage >= totalPages;
+  renderPages(totalPages);
+  syncSelectionState(pageRecords);
+}
+
+function renderPages(totalPages) {
+  const pages = new Set([1, totalPages, currentPage, currentPage - 1, currentPage + 1, 2, 3]);
+  const sorted = [...pages].filter(page => page >= 1 && page <= totalPages).sort((a, b) => a - b);
+  let previous = 0;
+  $("#pageNumbers").innerHTML = sorted.map(page => { const gap = page - previous > 1 ? `<button class="page-btn" disabled>...</button>` : ""; previous = page; return `${gap}<button class="page-btn ${page === currentPage ? "current" : ""}" data-page="${page}">${page}</button>`; }).join("");
+}
+
+function syncSelectionState(pageRecords = []) {
+  const selectedCount = selectedIds.size;
+  $("#editSelectedBtn").disabled = selectedCount !== 1;
+  $("#editSelectedBtn").classList.toggle("disabled", selectedCount !== 1);
+  $("#batchDeleteBtn").disabled = selectedCount === 0;
+  $("#batchDeleteBtn").classList.toggle("disabled", selectedCount === 0);
+  $("#selectAll").checked = pageRecords.length > 0 && pageRecords.every(record => selectedIds.has(record.id));
+}
+
+function applyFilters() {
+  const storeCodes = getFilterGroupCodes(), areas = selectedAreaFilters(), areaEnabled = !$("#areaFilter").classList.contains("disabled"), names = parseMultiValueText($("#nameFilter").value), employeeIds = parseMultiValueText($("#employeeIdFilter").value), { start: monthStart, end: monthEnd } = selectedMonthRange;
+  const min = Number($("#minAmount").value || 0), max = Number($("#maxAmount").value || Number.MAX_SAFE_INTEGER), keyword = $("#globalSearch").value.trim();
+  filteredRecords = records.filter(record => {
+    const recordGroup = baseGroup(record.group);
+    const teamName = groupToTeam.get(recordGroup) || "";
+    const inMonthRange = !monthStart || record.month >= monthStart && record.month <= (monthEnd || monthStart);
+    return (!storeCodes || storeCodes.has(recordGroup)) && (!areaEnabled || areas.includes(recordArea(record))) && (!names.length || names.includes(record.employeeName)) && (!employeeIds.length || employeeIds.some(employeeId => record.employeeId === employeeId)) && inMonthRange && record.amount >= min && record.amount <= max && (!keyword || [groupLabel(record.group), teamName, `[${storeTree.code}]${storeTree.name}`, record.employeeName, record.employeeId, record.month, record.updatedBy].some(value => String(value).includes(keyword)));
+  });
+  currentPage = 1; selectedIds.clear(); render(); toast(`查询完成，共 ${filteredRecords.length} 条数据`);
+}
+
+function resetFilters() {
+  selectedGroupFilters.clear();
+  activeCascadeTeam = storeTree.teams[0].name;
+  selectedMonthRange = { start: "", end: "" };
+  renderStoreCascade();
+  syncAreaFilter();
+  renderMonthPicker();
+  ["#nameFilter", "#employeeIdFilter", "#minAmount", "#maxAmount", "#globalSearch"].forEach(selector => $(selector).value = "");
+  filteredRecords = [...records]; selectedIds.clear(); currentPage = 1; render(); toast("筛选条件已重置");
+}
+
+function openModal(id) { $(id).hidden = false; }
+function closeModals() { document.querySelectorAll(".modal-mask").forEach(modal => modal.hidden = true); $("#formTip").textContent = ""; closeMultiSelects(); }
+
+function openEditor(record, copy = false) {
+  editingId = record && !copy ? record.id : null;
+  $("#editTitle").textContent = record && !copy ? "修改" : copy ? "复制" : "新增";
+  resetFormLines(record ? normalizeRecordForForm({ ...record, amount: copy ? "" : record.amount }) : {});
+  openModal("#editModal");
+}
+
+function saveRecord() {
+  const { rows, errors } = readFormLines();
+  if (errors.length) { $("#formTip").textContent = errors[0]; return; }
+  if (rows.some(row => row.amount < 0)) { $("#formTip").textContent = "目标销售额不能小于 0"; return; }
+  if (editingId && rows.length !== 1) { $("#formTip").textContent = "修改时仅支持选择一个柜组和一名员工"; return; }
+  const duplicateResult = findDuplicateRows(rows, editingId);
+  if (duplicateResult.messages.length) {
+    const message = `发现重复数据，唯一值为“柜组 + 工号 + 月份”。\n${duplicateResult.messages.slice(0, 4).join("\n")}`;
+    $("#formTip").textContent = duplicateResult.messages[0];
+    alertDuplicate(message);
+    return;
+  }
+  const updatedAt = "2026-07-03 17:30:00";
+  if (editingId) {
+    const row = rows[0];
+    const persistedRow = splitGroupCodes.has(row.group) && row.area ? { ...row, group: `${row.group}-${row.area}` } : row;
+    records = records.map(record => record.id === editingId ? { ...record, ...persistedRow, updatedBy: "当前用户", updatedAt } : record);
+    toast("修改成功");
+  } else {
+    const created = expandSplitRows(rows, updatedAt);
+    records.unshift(...created);
+    const splitCount = created.length - rows.length;
+    toast(splitCount ? `新增成功，共 ${created.length} 条，已自动拆分 ${splitCount} 条区域数据` : `新增成功，共 ${created.length} 条`);
+  }
+  closeModals(); filteredRecords = [...records]; currentPage = 1; selectedIds.clear(); render();
+}
+
+function deleteRecord(id) {
+  const record = records.find(item => item.id === id);
+  if (!record || !confirm(`确认删除 ${record.employeeName} ${record.month} 的销售目标？`)) return;
+  records = records.filter(item => item.id !== id); filteredRecords = filteredRecords.filter(item => item.id !== id); selectedIds.delete(id); render(); toast("删除成功");
+}
+
+function batchDelete() {
+  if (!selectedIds.size || !confirm(`确认删除已选择的 ${selectedIds.size} 条数据？`)) return;
+  records = records.filter(record => !selectedIds.has(record.id)); filteredRecords = filteredRecords.filter(record => !selectedIds.has(record.id)); selectedIds.clear(); render(); toast("批量删除成功");
+}
+
+function simulateImport() {
+  const updateExisting = $("#updateExisting").checked;
+  const importedRows = [
+    { group: groups[0], employeeName: "陈亚琳", employeeId: "26081021", month: "2026-07", attendanceDays: 24, amount: 68000 },
+    { group: groups[16], employeeName: "测试员工B", employeeId: "99000002", month: "2026-07", attendanceDays: 23, amount: 72000 }
+  ];
+  const permissionDenied = importedRows.filter(row => !allowedImportGroups.has(baseGroup(row.group)));
+  const invalidEmployee = importedRows.find(row => !isEightDigitEmployeeId(row.employeeId));
+  if (permissionDenied.length) { alert(`导入失败：存在无权限柜组 ${permissionDenied.map(row => row.group).join("、")}，数据权限需按柜组控制。`); return; }
+  if (invalidEmployee) { alert(`导入失败：${invalidEmployee.employeeName} 的工号必须为8位数字。`); return; }
+  const duplicateResult = updateExisting ? { messages: [] } : findDuplicateRows(importedRows);
+  if (duplicateResult.messages.length) {
+    alertDuplicate(`导入失败：发现重复数据。\n${duplicateResult.messages.slice(0, 4).join("\n")}`);
+    closeModals();
+    return;
+  }
+  const imported = importedRows.map((row, index) => ({ id: `import-${Date.now()}-${index + 1}`, ...row, updatedBy: "导入用户", updatedAt: "2026-07-03 17:35:00" }));
+  records = updateExisting ? [...imported, ...records.filter(record => !new Set(imported.map(recordUniqueKey)).has(recordUniqueKey(record)))] : [...imported, ...records];
+  filteredRecords = [...records]; selectedIds.clear(); currentPage = 1; closeModals(); render(); toast(`${pickedFileName || "测试数据"} 导入成功，新增 ${imported.length} 条`);
+}
+
+function downloadCsv(filename, csv) {
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+  const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = filename; link.click(); URL.revokeObjectURL(link.href);
+}
+
+function downloadTemplate() {
+  const csv = [
+    "模板规则说明,,,,,,",
+    "数据权限,按柜组控制，仅允许导入当前用户所属柜组,,,,,",
+    "唯一值校验,柜组 + 工号 + 月份 不允许重复,,,,,",
+    "必填字段,柜组、员工姓名、工号、月份、出勤天数均为必填,,,,,",
+    "工号格式,必须为8位数字,,,,,",
+    "月份格式,使用日期格式，例如2026-07,,,,,",
+    "数值格式,出勤天数支持整数或最多两位小数；目标销售额为非负数且最多保留两位小数,,,,,",
+    "分区填写,仅T3入境团队的柜组72225101和72225104填写；其他柜组填写-,,,,,",
+    "填写字段,,,,,,",
+    "月份,柜组,分区,员工姓名,工号,出勤天数,目标销售额（元）",
+    "=\"2026-07\",[72222201]T3E14香化,-,陈亚琳,26081021,24,100000",
+    "=\"2026-07\",[72225101]T3CI1,烟区,唐伟,26081022,23.5,125000.50",
+    "=\"2026-07\",[72225104]T3CI4,香化A,蒙海晓,26081023,22,68000"
+  ].join("\n");
+  downloadCsv("员工销售目标填报模板.csv", csv);
+}
+
+function exportCurrentPage() {
+  const rows = filteredRecords.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const csv = ["柜组,分区,员工姓名,工号,月份,出勤天数,目标销售额（元）,最后更新人,最后更新时间", ...rows.map(row => [groupLabel(row.group), recordArea(row) || "-", row.employeeName, row.employeeId, row.month, row.attendanceDays ?? "", row.amount, row.updatedBy, row.updatedAt].join(","))].join("\n");
+  downloadCsv("sales-target-current-page.csv", csv);
+}
+
+function toast(message) { const el = $("#toast"); el.textContent = message; el.hidden = false; clearTimeout(toast.timer); toast.timer = setTimeout(() => el.hidden = true, 1800); }
+
+fillOptions(); render();
+$("#queryBtn").addEventListener("click", applyFilters);
+$("#resetBtn").addEventListener("click", resetFilters);
+$("#globalSearch").addEventListener("keydown", event => { if (event.key === "Enter") applyFilters(); });
+$("#pageSize").addEventListener("change", event => { pageSize = Number(event.target.value); currentPage = 1; render(); });
+$("#prevPage").addEventListener("click", () => { currentPage--; render(); });
+$("#nextPage").addEventListener("click", () => { currentPage++; render(); });
+$("#pageNumbers").addEventListener("click", event => { if (event.target.dataset.page) { currentPage = Number(event.target.dataset.page); render(); } });
+$("#jumpPage").addEventListener("keydown", event => { if (event.key === "Enter") { currentPage = Number(event.target.value) || 1; render(); } });
+$("#addBtn").addEventListener("click", () => openEditor(null));
+$("#editSelectedBtn").addEventListener("click", () => openEditor(records.find(record => selectedIds.has(record.id))));
+$("#importBtn").addEventListener("click", () => openModal("#importModal"));
+$("#batchDeleteBtn").addEventListener("click", batchDelete);
+$("#saveBtn").addEventListener("click", saveRecord);
+$("#confirmImportBtn").addEventListener("click", simulateImport);
+$("#exportBtn").addEventListener("click", exportCurrentPage);
+$("#pickNameBtn").addEventListener("click", () => openMultiValue("name"));
+$("#pickEmployeeBtn").addEventListener("click", () => openMultiValue("employeeId"));
+$("#multiValueInput").addEventListener("input", updateMultiValueCount);
+$("#confirmMultiValueBtn").addEventListener("click", confirmMultiValue);
+$("#fullscreenBtn").addEventListener("click", () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.());
+$("#collapseBtn").addEventListener("click", () => { $("#filters").classList.toggle("collapsed"); $("#collapseBtn").textContent = $("#filters").classList.contains("collapsed") ? "⌄" : "⌃"; });
+$("#guidanceToggle").addEventListener("click", () => { $("#guidance").classList.toggle("collapsed"); $("#guidanceToggle span").textContent = $("#guidance").classList.contains("collapsed") ? "点击展开" : "点击收起"; });
+$("#selectAll").addEventListener("change", event => { filteredRecords.slice((currentPage - 1) * pageSize, currentPage * pageSize).forEach(record => event.target.checked ? selectedIds.add(record.id) : selectedIds.delete(record.id)); render(); });
+$("#storeFilter").addEventListener("click", event => {
+  const trigger = event.target.closest("[data-cascade-trigger]");
+  const option = event.target.closest("[data-cascade-type]");
+  if (trigger) { event.preventDefault(); event.stopPropagation(); closeMultiSelects(); $("#storeFilter").classList.toggle("open"); }
+  if (option) { event.preventDefault(); event.stopPropagation(); setStoreFilter(option.dataset.cascadeType, option.dataset.cascadeValue); }
+});
+$("#areaFilter").addEventListener("click", event => {
+  const trigger = event.target.closest("[data-area-trigger]");
+  if (trigger && !trigger.disabled) { event.preventDefault(); event.stopPropagation(); $("#areaFilter").classList.toggle("open"); }
+  if (event.target.closest("[data-area-all]")) { event.preventDefault(); $("#areaFilter").querySelectorAll('input[type="checkbox"]').forEach(input => input.checked = true); updateAreaFilterText(); }
+  if (event.target.closest("[data-area-clear]")) { event.preventDefault(); $("#areaFilter").querySelectorAll('input[type="checkbox"]').forEach(input => input.checked = false); updateAreaFilterText(); }
+});
+$("#areaFilter").addEventListener("change", updateAreaFilterText);
+$("#storeFilter").addEventListener("mouseover", event => {
+  const teamOption = event.target.closest('[data-cascade-type="team"]');
+  if (!teamOption) return;
+  activeCascadeTeam = teamOption.dataset.cascadeValue;
+  document.querySelectorAll(".cascade-group-list").forEach(list => list.classList.toggle("active", list.dataset.team === activeCascadeTeam));
+  document.querySelectorAll(".team-col .cascade-option").forEach(option => option.classList.toggle("hover", option === teamOption));
+});
+$("#monthFilter").addEventListener("click", event => {
+  const trigger = event.target.closest("[data-month-trigger]");
+  const yearBtn = event.target.closest("[data-month-year]");
+  const monthBtn = event.target.closest("[data-month-value]");
+  const shortcut = event.target.closest("[data-month-shortcut]");
+  if (trigger) { event.preventDefault(); event.stopPropagation(); closeStoreCascade(); closeMultiSelects(); $("#monthFilter").classList.toggle("open"); }
+  if (yearBtn) { event.preventDefault(); event.stopPropagation(); monthPanelYear += yearBtn.dataset.monthYear === "prev" ? -1 : 1; renderMonthPicker(); $("#monthFilter").classList.add("open"); }
+  if (monthBtn) {
+    event.preventDefault(); event.stopPropagation();
+    const wasPickingEnd = selectedMonthRange.start && !selectedMonthRange.end;
+    pickMonthRange(monthBtn.dataset.monthValue);
+    if (wasPickingEnd) closeMonthPicker();
+  }
+  if (shortcut) {
+    event.preventDefault(); event.stopPropagation();
+    const [start, end] = shortcutMonthRange(shortcut.dataset.monthShortcut);
+    setSelectedMonthRange(start, end);
+    closeMonthPicker();
+  }
+});
+$("#formLines").addEventListener("change", event => {
+  if (event.target.matches('[data-field="group"]')) {
+    const line = event.target.closest("[data-form-line]");
+    syncAreaSelect(line);
+  }
 });
 
-refreshStoreOptions();
-renderRows();
-storeFilter.addEventListener("change", refreshStoreOptions);
-document.getElementById("queryBtn").addEventListener("click", queryRows);
-document.getElementById("resetBtn").addEventListener("click", () => { document.querySelectorAll(".filters input").forEach(input => { input.value = ""; }); storeFilter.value = "7222"; refreshStoreOptions(); renderRows(); });
-document.getElementById("importBtn").addEventListener("click", () => openModal("importModal"));
-document.getElementById("addBtn").addEventListener("click", () => { document.querySelector("#addModal h2").textContent = "新增"; openModal("addModal"); });
-document.addEventListener("click", event => { if (event.target.matches("[data-close]")) closeModals(); if (event.target.matches("[data-edit]")) { event.preventDefault(); openModal("addModal"); document.querySelector("#addModal h2").textContent = "修改"; } });
-document.querySelectorAll(".modal-mask").forEach(mask => mask.addEventListener("click", event => { if (event.target === mask) closeModals(); }));
-document.getElementById("collapseBtn").addEventListener("click", () => { const filters = document.getElementById("filters"); filters.classList.toggle("collapsed"); document.getElementById("collapseText").textContent = filters.classList.contains("collapsed") ? "展开" : "收起"; document.querySelector("#collapseBtn b").textContent = filters.classList.contains("collapsed") ? "⌄" : "⌃"; });
-const dropZone = document.getElementById("dropZone");
+$("#formLines").addEventListener("input", event => {
+  if (!event.target.matches('[data-field="employeeText"]')) return;
+  const combo = event.target.closest(".employee-combobox");
+  const keyword = event.target.value.trim().toLowerCase();
+  combo.classList.add("open");
+  combo.querySelectorAll("[data-employee-value]").forEach(option => { option.hidden = keyword && !option.dataset.employeeValue.toLowerCase().includes(keyword); });
+});
+$("#formLines").addEventListener("click", event => {
+  const employeeOption = event.target.closest("[data-employee-value]");
+  if (employeeOption) { event.preventDefault(); const combo = employeeOption.closest(".employee-combobox"); combo.querySelector('[data-field="employeeText"]').value = employeeOption.dataset.employeeValue; combo.classList.remove("open"); return; }
+  const employeeTrigger = event.target.closest("[data-employee-trigger]");
+  const employeeInput = event.target.closest('[data-field="employeeText"]');
+  if (employeeTrigger || employeeInput) { event.preventDefault(); event.stopPropagation(); const combo = event.target.closest(".employee-combobox"); if (employeeTrigger) combo.classList.toggle("open"); else combo.classList.add("open"); return; }
+  const clearBtn = event.target.closest("[data-clear-multi]");
+  if (clearBtn) { event.preventDefault(); event.stopPropagation(); clearMultiSelect(clearBtn.closest(".multi-select")); return; }
+  const trigger = event.target.closest("[data-multi-trigger]");
+  if (trigger) {
+    event.preventDefault();
+    event.stopPropagation();
+    const multi = trigger.closest(".multi-select");
+    const isOpen = multi.classList.contains("open");
+    closeMultiSelects(multi);
+    multi.classList.toggle("open", !isOpen);
+    return;
+  }
+  if (event.target.matches("[data-add-line]")) { event.preventDefault(); $("#formLines").insertAdjacentHTML("beforeend", createFormLine({}, true)); syncFormLineState(); toast("已增加一行"); }
+  if (event.target.matches("[data-remove-line]")) { event.preventDefault(); event.target.closest("[data-form-line]").remove(); }
+});
+
+document.addEventListener("click", event => {
+  if (!event.target.closest(".employee-combobox")) document.querySelectorAll(".employee-combobox.open").forEach(combo => combo.classList.remove("open"));
+  if (!event.target.closest(".multi-select")) closeMultiSelects();
+  if (!event.target.closest("#storeFilter")) closeStoreCascade();
+  if (!event.target.closest("#monthFilter")) closeMonthPicker();
+  if (!event.target.closest("#areaFilter")) $("#areaFilter").classList.remove("open");
+  if (event.target.matches("[data-close]")) closeModals();
+  if (event.target.dataset.edit) { event.preventDefault(); openEditor(records.find(record => record.id === event.target.dataset.edit)); }
+  if (event.target.dataset.copy) { event.preventDefault(); openEditor(records.find(record => record.id === event.target.dataset.copy), true); }
+  if (event.target.dataset.delete) { event.preventDefault(); deleteRecord(event.target.dataset.delete); }
+});
+document.addEventListener("change", event => { if (event.target.dataset.select) { event.target.checked ? selectedIds.add(event.target.dataset.select) : selectedIds.delete(event.target.dataset.select); render(); } });
+document.querySelectorAll(".modal-mask").forEach(maskEl => maskEl.addEventListener("click", event => { if (event.target === maskEl) closeModals(); }));
+$("#splitTaskBtn")?.addEventListener("click", () => toast("任务拆分更新成功"));
+
+const dropZone = $("#dropZone");
 ["dragenter", "dragover"].forEach(type => dropZone.addEventListener(type, event => { event.preventDefault(); dropZone.classList.add("drag"); }));
-["dragleave", "drop"].forEach(type => dropZone.addEventListener(type, event => { event.preventDefault(); dropZone.classList.remove("drag"); }));
+["dragleave", "drop"].forEach(type => dropZone.addEventListener(type, event => { event.preventDefault(); dropZone.classList.remove("drag"); pickedFileName = event.dataTransfer?.files?.[0]?.name || "拖拽文件"; $("#uploadText").innerHTML = `已选择：<span>${pickedFileName}</span>`; }));
+$("#fileInput").addEventListener("change", event => { pickedFileName = event.target.files[0]?.name || ""; if (pickedFileName) $("#uploadText").innerHTML = `已选择：<span>${pickedFileName}</span>`; });
