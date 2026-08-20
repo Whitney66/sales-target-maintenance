@@ -29,7 +29,7 @@ select,input { outline:none; }
 .guidance-head { width:100%; height:34px; padding:0 14px; background:#ffc83d; color:#3d3420; display:flex; align-items:center; justify-content:space-between; }
 .guidance-head strong { font-size:15px; }
 .guidance-head span { font-size:14px; }
-.guidance-body { padding:12px 16px 10px; font-size:14px; line-height:1.55; max-height:220px; overflow:hidden; transition:max-height .2s ease,padding .2s ease; }
+.guidance-body { padding:12px 16px 10px; font-size:14px; line-height:1.55; max-height:420px; overflow:auto; transition:max-height .2s ease,padding .2s ease; }
 .guidance-body section+section { margin-top:8px; }
 .guidance-body h3 { margin:0 0 7px; font-size:16px; color:#26384d; }
 .guidance-body p { margin:0; }
