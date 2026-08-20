@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>员工销售目标维护 - 高保真原型</title>
-  <link rel="stylesheet" href="./styles.css?v=20260731-floating-employee-select" />
+  <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <div class="app">
@@ -18,112 +18,56 @@
         <a>分析</a><a>库存分析</a><a>顾客分析</a><a>采购分析</a><a>提货分析</a><a>风险管控</a><a>离线分析</a><a>自定义分析</a><a class="active">数据填报</a>
       </nav>
       <div class="top-actions">
-        <div class="search"><input id="globalSearch" placeholder="搜索" /><span>⌕</span></div>
-        <button class="icon-btn" aria-label="通知">♧</button>
-        <button class="icon-btn" id="fullscreenBtn" aria-label="全屏">⛶</button>
-        <div class="avatar">cdf</div>
+        <div class="search"><input placeholder="搜索" /><span>⌕</span></div>
+        <button class="icon-btn" aria-label="通知">♢</button><button class="icon-btn" aria-label="全屏">⛶</button><div class="avatar">cdf</div>
       </div>
     </header>
 
     <main class="page">
-      <div class="tabs"><button>经营看板 <span>×</span></button><button class="selected">员工销售目标维护 <span>×</span></button></div>
-
-      <section class="guidance" id="guidance">
-        <button type="button" class="guidance-head" id="guidanceToggle"><strong>筛选项及展示列表说明</strong><span>点击收起</span></button>
-        <div class="guidance-body">
-          <section><h3>一、筛选项</h3><p class="guidance-highlight">门店当前仅支持：[7222]中免集团(北京)免税品有限公司；柜组展示为“[编码]柜组名称”。</p><ul><li>柜组：对应门店柜组；分区仅柜组72225101和72225104可选烟区、精品区、酒水区、香化A、香化B，其他柜组置灰。</li><li>员工姓名：支持输入多个已填写的员工姓名并精准查询；工号：支持输入多个8位员工工号并精准查询。</li><li>月份：使用月份范围组件；目标销售额支持按区间筛选。</li></ul></section>
-          <section><h3>二、展示列表</h3><p>依次展示柜组、分区、员工姓名、工号、月份、出勤天数、目标销售额（元）；非T3入境指定柜组的分区展示为“-”。</p></section>
-        </div>
-      </section>
+      <div class="tabs">
+        <button>经营看板 <span>×</span></button>
+        <button class="selected">员工销售目标维护 <span>×</span></button>
+      </div>
 
       <section class="filters" id="filters">
         <div class="filter-grid">
-          <label><span>柜组</span><div class="cascade-select" id="storeFilter"><button type="button" class="cascade-trigger placeholder" data-cascade-trigger><span data-cascade-text>请选择柜组</span><b>⌄</b></button><div class="cascade-panel" data-cascade-panel></div></div></label>
-          <label><span>分区</span><div class="area-filter disabled" id="areaFilter"><button type="button" class="area-filter-trigger" data-area-trigger disabled><span data-area-text>-</span><b>⌄</b></button><div class="area-filter-menu" data-area-menu></div></div></label>
-          <label><span>员工姓名</span><div class="lookup"><input id="nameFilter" placeholder="请输入员工姓名" /><button id="pickNameBtn">•••</button></div></label>
-          <label><span>工号</span><div class="lookup"><input id="employeeIdFilter" placeholder="请输入8位工号" /><button id="pickEmployeeBtn">•••</button></div></label>
-          <label><span>月份</span><div class="month-picker" id="monthFilter"><button type="button" class="month-trigger placeholder" data-month-trigger><span class="calendar-icon">▦</span><span data-month-text>开始日期　-　结束日期</span></button><div class="month-panel" data-month-panel></div></div></label>
-          <label class="amount"><span>目标销售额(元)</span><div class="range"><input id="minAmount" type="number" step="0.01" placeholder="请输入" /><em>-</em><input id="maxAmount" type="number" step="0.01" placeholder="请输入" /></div></label>
+          <label><span>门店</span><select id="storeFilter"><option value="7222">[7222]中免集团(北京)免税品有限公司</option><option value="7223">[7223]中免集团北京大兴国际机场免税品有限公司</option></select></label>
+          <label><span>团队</span><select id="teamFilter"><option value="">全部</option></select></label>
+          <label><span>柜组</span><select id="groupFilter"><option value="">全部</option></select></label>
+          <label><span>分区</span><select id="zoneFilter"><option value="">全部</option></select></label>
+          <label><span>员工姓名</span><input id="nameFilter" placeholder="请输入多个姓名，以逗号分隔" /></label>
+          <label><span>工号</span><input id="jobFilter" maxlength="80" placeholder="请输入多个8位工号，以逗号分隔" /></label>
+          <label><span>月份</span><div class="month-range"><input id="monthStart" type="month" aria-label="开始月份" /><em>至</em><input id="monthEnd" type="month" aria-label="结束月份" /></div></label>
+          <label class="amount"><span>目标销售额（元）</span><div class="range"><input id="amountMin" type="number" min="0" placeholder="最低金额" /><em>—</em><input id="amountMax" type="number" min="0" placeholder="最高金额" /></div></label>
           <div class="filter-buttons"><button class="primary small" id="queryBtn">⌕ 查询</button><button class="ghost small" id="resetBtn">↻ 重置</button></div>
         </div>
-        <button class="collapse" id="collapseBtn" aria-label="折叠筛选">⌃</button>
+        <button class="collapse" id="collapseBtn" aria-label="收起筛选"><span id="collapseText">收起</span><b>⌃</b></button>
       </section>
 
       <section class="toolbar">
-        <div>
-          <button class="primary" id="addBtn">新增</button>
-          <button class="outline disabled" id="editSelectedBtn" disabled>修改</button>
-          <button class="outline" id="importBtn">导入</button>
-          <button class="danger disabled" id="batchDeleteBtn" disabled>▥ 批量删除</button>
-        </div>
+        <div><button class="primary" id="addBtn">新增</button><button class="outline disabled">修改</button><button class="outline" id="importBtn">导入</button><button class="danger">▥ 批量删除</button></div>
+        <button class="sync">更新任务拆分</button>
       </section>
 
       <section class="table-wrap">
         <table>
-          <thead>
-            <tr><th class="check"><input type="checkbox" id="selectAll" /></th><th>柜组</th><th>分区</th><th>员工姓名</th><th>工号</th><th>月份</th><th>出勤天数</th><th>目标销售额（元）</th><th>最后更新人</th><th>最后更新时间</th><th>操作</th></tr>
-          </thead>
+          <thead><tr><th class="check"><input type="checkbox" /></th><th>柜组</th><th>分区</th><th>员工姓名</th><th>工号</th><th>月份</th><th>出勤天数</th><th>目标销售额（元）</th><th>操作</th></tr></thead>
           <tbody id="tableBody"></tbody>
         </table>
-        <div class="empty" id="emptyState" hidden>暂无匹配数据</div>
+        <div class="empty" id="emptyState" hidden>暂无符合筛选条件的数据</div>
       </section>
 
       <footer class="pager">
-        <div class="float-tools"><button title="列设置">▦</button><button id="exportBtn" title="导出当前页">⇩</button><button title="排序">⇅</button><button title="汇总">Σ</button></div>
-        <span id="totalText">共 0 条</span>
-        <select id="pageSize"><option>10</option><option selected>30</option><option>50</option></select><span>条/页</span>
-        <button class="page-btn" id="prevPage">‹</button>
-        <div id="pageNumbers" class="page-numbers"></div>
-        <button class="page-btn" id="nextPage">›</button>
-        <span>前往</span><input class="jump" id="jumpPage" value="1" /><span>页</span>
+        <div class="float-tools"><button>▦</button><button>⇩</button><button>⇅</button><button>Σ</button></div>
+        <span id="totalText">共 0 条</span><select><option>30条/页</option></select><button class="page-btn muted">‹</button><button class="page-btn current">1</button><button class="page-btn muted">›</button><span>前往</span><input class="jump" value="1" /><span>页</span>
       </footer>
     </main>
   </div>
 
-  <div class="modal-mask" id="importModal" hidden>
-    <div class="modal import-modal">
-      <div class="modal-head"><h2>导入</h2><button class="close" data-close>×</button></div>
-      <div class="upload-box" id="dropZone"><div class="cloud">☁</div><p id="uploadText">将文件拖到此处，或<span>点击上传</span></p><input id="fileInput" type="file" accept=".xls,.xlsx,.csv" /></div>
-      <label class="checkbox-row"><input id="updateExisting" type="checkbox" /> 是否更新已经存在的员工销售目标数据</label>
-      <div class="import-rules">
-        <strong>导入校验说明</strong>
-        <span>数据权限按柜组控制，仅允许导入当前用户所属柜组。</span>
-        <span>唯一值按“柜组 + 工号 + 月份”校验，重复数据提交或导入时弹窗提醒。</span>
-        <span>柜组、员工姓名、工号、月份、出勤天数均为必填；工号必须为8位数字。</span>
-        <span>月份格式为日期格式，如2026-07；出勤天数、目标销售额支持整数或最多两位小数。</span>
-        <span>模板包含“分区（仅T3入境团队填写）”字段，仅柜组72225101和72225104需要填写；其他柜组无需填写并展示为“-”。</span>
-      </div>
-      <p class="hint">仅允许导入xls、xlsx、csv格式文件。<a href="./test-data/sales-target-import-template.csv?v=20260731-group-labels" download="员工销售目标填报模板.csv">下载员工销售目标填报模板</a></p>
-      <div class="modal-actions"><button class="primary" id="confirmImportBtn">确定</button><button class="ghost" data-close>取消</button></div>
-    </div>
-  </div>
+  <div class="modal-mask" id="importModal" hidden><div class="modal import-modal"><div class="modal-head"><h2>导入</h2><button class="close" data-close>×</button></div><div class="upload-box" id="dropZone"><div class="cloud">☁</div><p>将文件拖到此处，或<span>点击上传</span></p><input type="file" accept=".xls,.xlsx" /></div><label class="checkbox-row"><input type="checkbox" /> 是否更新已经存在的员工销售目标数据</label><p class="hint">仅允许导入xls、xlsx格式文件。<a href="#" download="员工销售目标填报模板.xls">下载员工销售目标填报模板</a></p><div class="modal-actions"><button class="primary">确定</button><button class="ghost" data-close>取消</button></div></div></div>
 
-  <div class="modal-mask" id="editModal" hidden>
-    <div class="modal add-modal">
-      <div class="modal-head"><h2 id="editTitle">新增</h2><button class="close" data-close>×</button></div>
-      <div class="editor-rules"><strong>新增校验说明</strong><span>唯一值按“柜组 + 工号 + 月份”校验；重复数据提交时弹窗提醒。</span><span>带 * 字段为必填项，数值字段最多保留两位小数。</span></div>
-      <div class="add-lines" id="formLines"></div>
-      <div class="form-tip" id="formTip"></div>
-      <div class="modal-actions"><button class="primary" id="saveBtn">确定</button><button class="ghost" data-close>取消</button></div>
-    </div>
-  </div>
+  <div class="modal-mask" id="addModal" hidden><div class="modal add-modal"><div class="modal-head"><h2>新增</h2><button class="close" data-close>×</button></div><div class="add-row"><div class="select">请选择柜组 <b>⌄</b></div><div class="select">请选择分区 <b>⌄</b></div><div class="select">请选择员工 <b>⌄</b></div><div class="date">▣ 请选择月份</div><input placeholder="请输入出勤天数" /><input placeholder="请输入目标销售额（元）" /><button class="round-plus" title="增加一行">＋</button></div><div class="modal-actions"><button class="primary">确定</button><button class="ghost" data-close>取消</button></div></div></div>
 
-  <div class="modal-mask" id="multiValueModal" hidden>
-    <div class="modal multi-value-modal">
-      <div class="modal-head"><h2>编辑多值</h2><button class="close" data-close>×</button></div>
-      <div class="multi-value-body">
-        <div class="multi-value-meta"><span>输入选项值（每行一个）</span><span>当前已输入：<b id="multiValueCount">0</b> 个</span></div>
-        <textarea id="multiValueInput" placeholder="请输入内容"></textarea>
-      </div>
-      <div class="modal-actions"><button class="primary" id="confirmMultiValueBtn">确定</button><button class="ghost" data-close>取消</button></div>
-    </div>
-  </div>
-
-  <div class="toast" id="toast" hidden></div>
-  <script src="./script.js?v=20260731-floating-employee-select"></script>
+  <script src="./script.js"></script>
 </body>
 </html>
-
-
-
-
